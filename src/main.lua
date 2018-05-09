@@ -14,8 +14,10 @@ function love.load()
 		hud=love.graphics.newFont("data/fonts/hud.ttf",12),
 		game=love.graphics.newFont("data/fonts/game.ttf",9)
 	}
+	love.graphics.setDefaultFilter("linear", "linear")
 	main.images = {
-		spark=love.graphics.newImage("data/images/spark.png")
+		spark=love.graphics.newImage("data/images/spark.png"),
+		ring=love.graphics.newImage("data/images/ring.png")
 	}
 
 	local w,h = love.window.getMode()
