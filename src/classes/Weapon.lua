@@ -46,7 +46,7 @@ Weapon.weapons = {
 		display="Shotgun",
 		rate=30,
 		mag=2,
-		count=8,
+		count=6,
 		reload=70,
 		spread=0.175,
 		bonus=0.7,
@@ -66,10 +66,10 @@ Weapon.weapons = {
 		display="Combat Shotgun",
 		rate=20,
 		mag=6,
-		count=5,
+		count=4,
 		reload=160,
 		spread=0.1,
-		bonus=1.2,
+		bonus=1.0,
 		recoil=0.4
 	},
 	sniper = {
@@ -84,17 +84,28 @@ Weapon.weapons = {
 	}
 }
 
-
 function Weapon:init(name, level)
 	local w = Weapon.weapons[name]
-	if not w then w = Weapon.weapons.pistol end
+	self.name = name
+	if not w then
+		w = Weapon.weapons.pistol
+		self.name = "pistol"
+	end
 	for k,v in pairs(w) do
 		self[k] = v
 	end
-	self.name = name
 	self.level = level
 	self.color = color.level(self.level)
 	self.ammo = self.mag
+	self.fullname = "L"..math.floor(self.level).." "..(color.name(self.level)).." "..self.display
+end
+
+Weapon.names = {}
+for id,_ in pairs(Weapon.weapons) do
+	table.insert(Weapon.names, id)
+end
+function Weapon.random()
+	return Weapon.names[math.random(#Weapon.names)]
 end
 
 return Weapon

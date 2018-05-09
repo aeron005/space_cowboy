@@ -9,20 +9,6 @@ function GameState:init()
 	GameState.super.init(self)
 	self.entities, self.entities_added, self.entities_removed = {}, {}, {}
 	
-	self.player = self:create("Player", {x=460, y=256, level=0})
-	for i=1,10 do
-		self:create("Enemy", {x=128+i*64, y=128, level=1})
-	end
-	for i=1,10 do
-	self:create("Enemy", {x=128+i*64, y=320, level=0})
-	end
-
-	local p = self:create("Pickup", {x=128, y=128}).Pickup
-	p.level = 3; p.weapon = Weapon:new('shotgun', p.level)
-
-	p = self:create("Pickup", {x=384, y=320}).Pickup
-	p.level = 2; p.weapon = Weapon:new('combat', p.level)
-
 	local mt,mb,ml,mr = 8,32,8,8
 	self.bounds = {
 		x=mt,
@@ -30,6 +16,59 @@ function GameState:init()
 		w=main.display.width-(ml+mr),
 		h=main.display.height-(mt+mb)
 	}
+
+	self.player = self:create("Player", {x=main.display.width/2, y=self.bounds.y+self.bounds.h/2, level=0})
+	self:wave(true)
+end
+
+function GameState:wave(guaranteed)
+	local baselevel = self.player.Person.level or self.player.level
+	local lvl,x,y
+	if math.random() < 0.0015 then
+		for i=1,10 do
+			lvl = baselevel+math.random()
+			self:create("Enemy", {x=128+i*64, y=128, level=lvl})
+		end
+		for i=1,10 do
+			lvl = baselevel+math.random()
+			self:create("Enemy", {x=128+i*64, y=320, level=lvl})
+		end
+	elseif math.random() < 0.0025 then
+		local cx, cy, cr = main.display.width/2, main.display.height/2, main.display.height*3/8
+		for i=0,9 do
+			if math.random() < 0.5 then
+				local dir=(i/10)*math.pi*2
+				x,y = cx+cr*math.cos(dir), cy+cr*math.sin(dir)
+				lvl = baselevel+math.random()-(baselevel)*math.random()
+				self:create("Enemy", {x=x, y=y, level=lvl})
+			end
+		end
+	else
+		for i=0,9 do
+			if math.random() < 0.125 or (i<2 and guaranteed) then
+				lvl = baselevel+math.random()
+				x,y = self:randomPosition(16+lvl/4)
+				self:create("Enemy", {x=x,y=y,level=lvl})
+			end
+		end
+	end
+	
+	if math.random() < 0.25 then
+		lvl = baselevel+math.random()*2
+		x,y = self:randomPosition(32)
+		local p = self:create("Pickup", {x=x, y=y}).Pickup
+		p.weapon = Weapon:new(Weapon.random(), lvl)
+		p.level = lvl
+	end
+
+	for i=1,3 do
+		if math.random() < 0.125 then
+			lvl = baselevel+math.random()*2
+			x,y = self:randomPosition(32)
+			local p = self:create("Pickup", {x=x, y=y}).Pickup
+			p.level = lvl
+		end
+	end
 
 end
 
@@ -54,6 +93,9 @@ function GameState:update(dt)
 		self.entities[e] = nil
 	end
 	self.entities_removed = {}
+	if math.random() < dt/8 then
+		self:wave()
+	end
 end
 
 function GameState:draw()
@@ -69,45 +111,53 @@ function GameState:postDraw()
 	
 	-- Inventory
 	local person = self.player.Person
+	local cx = (main.display.width-(24*(#person.weapons+2)))/2
 	for k,v in pairs(person.weapons) do
-		local x,y = self.bounds.x + (k-0.5)*14, self.bounds.h + self.bounds.y*2
+		local x,y = cx+self.bounds.x + k*24, self.bounds.h + self.bounds.y*3
 		love.graphics.setColor(color.level(v.level))
-		love.graphics.circle("line", x, y, 4, 16)
+		love.graphics.circle("line", x, y, 6, 16)
 		if k == person.equipped then
-			love.graphics.circle("fill", x, y, 2, 16)
+			love.graphics.circle("fill", x, y, 3, 16)
 		end
 	end
 
 	-- Boundary
-	love.graphics.setColor(255,255,255)
+	love.graphics.setColor(color.level(person.level))
 	love.graphics.rectangle("line",self.bounds.x,self.bounds.y,self.bounds.w,self.bounds.h)
+	love.graphics.setColor(255,255,255)
 
 	-- Ammo bar
-	love.graphics.rectangle("line",self.bounds.x,self.bounds.h + self.bounds.y*3,128,10)
+	local bar_size = 256
+	love.graphics.rectangle("line",self.bounds.x,self.bounds.h + self.bounds.y*3,bar_size,10)
 	local w = person.weapon
-	local aw = 124 * (w.ammo / w.mag)
+	local aw = (bar_size-4) * (w.ammo / w.mag)
 	if person.reloading then
-		aw = 124 * (1-(person.rt / (w.reload/60)))
+		aw = (bar_size-4) * (1-(person.rt / (w.reload/60)))
 	end
 	love.graphics.rectangle("fill",self.bounds.x+2,self.bounds.h + self.bounds.y*3+2,aw,6)
 
 	-- Health bar
-	love.graphics.rectangle("line",self.bounds.x+self.bounds.w-128,self.bounds.h + self.bounds.y*3,128,10)
-	local hw = 124 * (person.health / person.max_health)
+	love.graphics.rectangle("line",self.bounds.x+self.bounds.w-bar_size,self.bounds.h + self.bounds.y*3,bar_size,10)
+	local hw = (bar_size-4) * (person.health / person.max_health)
 	if hw > 0 then
-		love.graphics.rectangle("fill",self.bounds.x+self.bounds.w-128+2,self.bounds.h + self.bounds.y*3+2,hw,6)
+		love.graphics.rectangle("fill",self.bounds.x+self.bounds.w-bar_size+2,self.bounds.h + self.bounds.y*3+2,hw,6)
 	end
 
 	--[[
 	local c = 0
 	for k,v in pairs(self.entities) do c = c + 1 end
-	love.graphics.push()
-	love.graphics.translate(self.bounds.x,self.bounds.h+(self.bounds.y)*2)
-	love.graphics.scale(1)
-	love.graphics.setFont(main.font.hud)
-	love.graphics.print("Space Cowboy - Entities: "..c,0,0)
-	love.graphics.pop()
 	--]]
+	love.graphics.push()
+	love.graphics.translate(self.bounds.x,self.bounds.h+(self.bounds.y))
+	--love.graphics.scale(1)
+	--love.graphics.setFont(main.font.hud)
+	--love.graphics.print(self.player.Person.weapon.fullname,bar_size+16,0)
+	love.graphics.setFont(main.font.game)
+	love.graphics.setColor(color.level(person.weapon.level))
+	love.graphics.print(self.player.Person.weapon.fullname,0,3)
+	love.graphics.setColor(color.level(person.level))
+	love.graphics.print(self.player.Person.class,self.bounds.w-bar_size,3)
+	love.graphics.pop()
 end
 
 function GameState:keypressed(...)
@@ -138,6 +188,11 @@ function GameState:create(obj,properties)
 	end
 	self:spawn(e)
 	return e
+end
+
+function GameState:randomPosition(r)
+	r = r or 32
+	return self.bounds.x+r+math.random()*(self.bounds.w-r*2), self.bounds.y+r+math.random()*(self.bounds.h-r*2)
 end
 
 function GameState:randomEntity(class)

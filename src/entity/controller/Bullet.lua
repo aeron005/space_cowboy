@@ -64,7 +64,7 @@ function render(e)
 	for i,v in ipairs(color.names) do
 		local c = color.level(i-1)
 		Bullet.trails[i-1] = love.graphics.newMesh({
-			{8,0,0,0,c[1],c[2],c[3],20},
+			{8,0,0,0,c[1],c[2],c[3],40},
 			{0,2,0,0,c[1],c[2],c[3],10},
 			{-128,0,0,0,c[1],c[2],c[3],0},
 			{0,-2,0,0,c[1],c[2],c[3],10},

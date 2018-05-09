@@ -26,7 +26,11 @@ function Person.on:spawn(e)
 	if self.is_player then
 		self.weapons = { Weapon:new("pistol",self.level+1) }
 	else
-		self.weapons = { Weapon:new("pistol",self.level) }
+		local wtype = "pistol"
+		if self.level > 1 then
+			wtype = Weapon.random()
+		end
+		self.weapons = { Weapon:new(wtype,self.level) }
 		self.target = e.game:randomEntity("Person")
 	end
 	self:equip(1)
@@ -39,11 +43,18 @@ function Person:setLevel(lvl)
 	self.max_health = (self.level + 2)*6
 	self.radius = 8 + self.level/4
 	self.Entity.radius = self.radius
-	self.color = color.level(self.level)
+	self.color = color.fulllevel(self.level)
+	if self.is_player then
+		self.class = "L"..(math.floor(self.level*10)/10).." "..color.name(self.level).." "..color.class(self.level)
+	end
+end
+
+function Person:addLevel(lvl)
+	self:setLevel(self.level+lvl)
 end
 
 function Person:equip(wi)
-	self.equipped =  wi
+	self.equipped = wi
 	self.weapon = self.weapons[wi]
 	if self.weapon.ammo < 1 then
 		self:reload()
@@ -53,7 +64,7 @@ end
 function Person.on:update(e, dt)
 	local i = e.input
 	local left, right, up, down = i.left, i.right, i.up, i.down
-	local speed = 100
+	local speed = 75
 	e.dx, e.dy = 0, 0
 
 	-- Aiming and AI
@@ -106,7 +117,7 @@ function Person.on:update(e, dt)
 
 	-- Health regeneration
 	if self.health < self.max_health then
-		self.health = self.health + (self.level+1)*dt/3
+		self.health = self.health + (self.level+1)*dt
 	end
 end
 
@@ -147,15 +158,20 @@ end
 function Person:ai(e, dt)
 	local i = e.input
 	-- Movement
-	if math.random() < dt*4 then
-		i.left = math.random() > 0.5
-		i.right = math.random() > 0.5
-		i.down = math.random() > 0.5
-		i.up = math.random() > 0.5
-		i.shoot = math.random() > 0.5
+	if math.random() < dt*2 then
+		i.left = math.random() < 0.5
+		i.right = math.random() < 0.5
+		i.down = math.random() < 0.5
+		i.up = math.random() < 0.5
 		self.ddir = (math.random() - 0.5) * 4
 	end
 	-- Actions
+	if i.shoot and math.random() < dt*32 then
+		i.shoot = math.random() < 0.125
+	end
+	if math.random() < dt*4 then
+		i.shoot = math.random() < 0.5
+	end
 	if math.random() < dt*4 then
 		if math.random() < 0.25 then
 			self.target = e.game:randomEntity("Person")
@@ -171,7 +187,7 @@ function Person:ai(e, dt)
 	if type(self.target) == 'table'
 	and self.target ~= e
 	and self.target.active then
-		self.dir = (self.dir*4 + math.atan2(self.target.y-e.y,self.target.x-e.x) )/5
+		self.dir = (self.dir*4 + math.atan2(self.target.y-e.y,self.target.x-e.x))/5
 	else
 		self.dir = self.dir + self.ddir*dt 
 	end
@@ -207,25 +223,54 @@ function Person.on:destroy(e)
 		local dx, dy = ri*math.cos(rd), ri*math.sin(rd)
 		local p = e.game:create("Pickup", {x=e.x, y=e.y, dx=dx, dy=dy}).Pickup
 		p.weapon = self.weapon
+		p.level = self.weapon.level
 	end
 end
 
 function Person.on:collide(e,oe)
-
 	if oe.Bullet then
 		local b = oe.Bullet
 		if b.owner ~= e then
-			oe:destroy()
+			b.owner.Person:addLevel(0.015)
 			self.health = self.health - (b.level+1)*b.bonus
 			if self.health < 0 then
+				b.owner.Person:addLevel(0.1)
 				e:destroy()
+			else
+				if not self.is_player
+				and math.random() < 0.125 then
+					self.target = b.owner
+				end
 			end
+			oe:destroy()
 		end
 	end
 
 	if oe.Pickup then
+		self:addLevel(0.05)
 		if oe.Pickup.weapon then
-			table.insert(self.weapons, oe.Pickup.weapon)
+			local w, match = oe.Pickup.weapon, nil
+			for id,inv in pairs(self.weapons) do
+				if w.name == inv.name
+				then
+					match = id
+				end
+			end
+			if match
+			and w.level > self.weapons[match].level
+			then
+				self.weapons[match] = w
+				if self.equipped == match then
+					self:equip(match)
+				end
+			elseif not match then
+				table.insert(self.weapons, oe.Pickup.weapon)
+			end
+		else
+			self.health = self.health + (oe.Pickup.level+1)*3
+			if self.health > self.max_health then
+				self.health = self.max_health
+			end
 		end
 		oe:destroy()
 	end

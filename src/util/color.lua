@@ -1,4 +1,6 @@
-function hsv(h, s, v)
+local color = {}
+
+function color.hsv(h, s, v)
     if s <= 0 then return v,v,v end
     h, s, v = (h%256)/256*6, s/255, v/255
     local c = v*s
@@ -13,11 +15,15 @@ function hsv(h, s, v)
     end return {(r+m)*255,(g+m)*255,(b+m)*255}
 end
 
-function level(level)
-	return hsv(level/7*256, 255, 255)
+function color.fulllevel(level)
+	return color.hsv(level/7*256, 255, 255)
 end
 
-local names = {
+function color.level(level)
+	return color.fulllevel(math.floor(level))
+end
+
+color.names = {
 	"Rusty",
 	"Sun", 
 	"Toxic", 
@@ -26,5 +32,28 @@ local names = {
 	"Royal",
 	"Ultraviolet", 
 }
+color.count=#color.names
+function color.name(level)
+	local id = math.floor(math.max(0,level)) % color.count
+	return color.names[id+1]
+end
 
-return {hsv=hsv, level=level, names=names, count=#names}
+color.classes = {
+	"Noob",
+	"Dabbler",
+	"Trainer",
+	"Apprentice",
+	"Warrior",
+	"Ninja",
+	"Baller",
+	"Elite",
+	"Master"
+}
+function color.class(level)
+	local id = math.floor(math.max(0,level*#color.classes)) % #color.classes
+	return color.classes[id+1]
+end
+
+
+
+return color
