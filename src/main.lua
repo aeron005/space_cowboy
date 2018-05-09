@@ -14,6 +14,9 @@ function love.load()
 		hud=love.graphics.newFont("data/fonts/hud.ttf",12),
 		game=love.graphics.newFont("data/fonts/game.ttf",9)
 	}
+	main.images = {
+		spark=love.graphics.newImage("data/images/spark.png")
+	}
 
 	local w,h = love.window.getMode()
 	love.resize(w, h)

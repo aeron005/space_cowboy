@@ -24,6 +24,10 @@ local classes = {
 		Physical={{friction=0.9,bounded=true}},
 		Pickup=true
 	},
+	
+	Explosion = {
+		Explosion=true
+	},
 
 	Menu = {
 		Menu=true,
