@@ -32,8 +32,22 @@ function Physical.on:create(e)
 end
 
 function Physical.on:update(e, dt)
+	local oex, oey = e.x, e.y
 	e.x = e.x + dt*e.dx
 	e.y = e.y + dt*e.dy
+
+	if self.bounded and e.game then
+		local g = e.game
+		if e.x - e.radius < g.bounds.x
+		or e.x + e.radius > g.bounds.x + g.bounds.w then
+			e.x = oex
+		end
+		if e.y - e.radius < g.bounds.y
+		or e.y + e.radius > g.bounds.y + g.bounds.h then
+			e.y = oey
+		end
+	end
+
 	if self.friction then
 		e.dx = e.dx * self.friction
 		e.dy = e.dy * self.friction

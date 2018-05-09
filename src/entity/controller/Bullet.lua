@@ -42,17 +42,6 @@ function Bullet.on:draw(e)
 	love.graphics.pop()
 end
 
-function Bullet.on:collide(e,o)
-	if o.Person
-	and self.owner ~= o then
-		e:destroy()
-		o.Person.health = o.Person.health - (self.level+1)*self.bonus
-		if o.Person.health < 0 then
-			o:destroy()
-		end
-	end
-end
-
 function render(e)
 	local s1,s2 = -4,-5
 	local d1,d2 = math.pi/8, -math.pi/8

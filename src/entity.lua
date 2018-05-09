@@ -1,6 +1,6 @@
 local classes = {
 	Player = {
-		Physical=true,
+		Physical={{bounded=true}},
 		Person={true},
 		Keyboard={
 			{w="up",s="down",a="left",d="right",space="shoot"}
@@ -11,12 +11,12 @@ local classes = {
 	},
 
 	Enemy = {
-		Physical=true,
+		Physical={{bounded=true}},
 		Person={false}
 	},
 
 	Bullet = {
-		Physical={radius=3},
+		Physical={{radius=3}},
 		Bullet=true
 	},
 

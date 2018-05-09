@@ -6,9 +6,9 @@ local Weapon = require('classes.Weapon')
 
 function Person:init(is_player)
 	self.is_player = is_player
-	self.weapons = { Weapon:new("pistol",1), Weapon:new("smg",0) }
-	self:equip(1)
-	for _,k in pairs({"dir","ammo","recoil","stabil","bt","rt","ct"}) do
+	--self.weapons = { Weapon:new("pistol",1), Weapon:new("smg",0) }
+	--self:equip(1)
+	for _,k in pairs({"dir","ddir","ammo","recoil","stabil","bt","rt","ct"}) do
 		self[k] = 0
 	end
 	for _,k in pairs({"reloading"}) do
@@ -22,6 +22,15 @@ function Person.on:spawn(e)
 	else
 		self:setLevel(0)
 	end
+
+	if self.is_player then
+		self.weapons = { Weapon:new("pistol",self.level+1) }
+	else
+		self.weapons = { Weapon:new("pistol",self.level) }
+		self.target = e.game:randomEntity("Person")
+	end
+	self:equip(1)
+
 	self.health = self.max_health
 end
 
@@ -45,6 +54,13 @@ function Person.on:update(e, dt)
 	
 	e.dx, e.dy = 0, 0
 
+	if self.is_player then
+		local mx, my = main:mouseX(), main:mouseY()
+		self.dir = math.atan2(my-e.y,mx-e.x)
+	else
+		self:ai(e,dt)
+	end
+
 	if left then
 		e.dx = e.dx-speed
 	end
@@ -56,10 +72,6 @@ function Person.on:update(e, dt)
 	end
 	if down then
 		e.dy = e.dy+speed
-	end
-	if self.is_player then
-		local mx, my = main:mouseX(), main:mouseY()
-		self.dir = math.atan2(my-e.y,mx-e.x)
 	end
 	
 	self.bt = self.bt - dt
@@ -115,6 +127,29 @@ function Person.on:update(e, dt)
 	end
 
 	self.ct = self.ct + dt % math.pi
+end
+
+function Person:ai(e, dt)
+	local i = e.input
+	if math.random() < dt*4 then
+		i.left = math.random() > 0.5
+		i.right = math.random() > 0.5
+		i.down = math.random() > 0.5
+		i.up = math.random() > 0.5
+		i.shoot = math.random() > 0.5
+		self.ddir = (math.random() - 0.5) * 4
+
+		if math.random() < 0.25 then
+			self.target = e.game:randomEntity("Person")
+		end
+	end
+	if type(self.target) == 'table'
+	and self.target ~= e
+	and self.target.active then
+		self.dir = (self.dir*4 + math.atan2(self.target.y-e.y,self.target.x-e.x) )/5
+	else
+		self.dir = self.dir + self.ddir*dt 
+	end
 end
 
 function Person.on:action(e, action)
@@ -194,6 +229,19 @@ function Person.on:drawCursor(e)
 end
 
 function Person.on:collide(e,oe)
+
+	if oe.Bullet then
+		local b = oe.Bullet
+		if b.owner ~= e then
+			oe:destroy()
+			self.health = self.health - (b.level+1)*b.bonus
+			if self.health < 0 then
+				e:destroy()
+			end
+		end
+	end
+
+
 	if oe.Pickup then
 		if oe.Pickup.weapon then
 			table.insert(self.weapons, oe.Pickup.weapon)

@@ -10,9 +10,11 @@ function GameState:init()
 	self.entities, self.entities_added, self.entities_removed = {}, {}, {}
 	
 	self.player = self:create("Player", {x=128, y=128})
-	self:create("Enemy", {x=256, y=128, level=12})--.Person:setLevel(2)
-	self:create("Enemy", {x=256, y=256, level=4})
-	self:create("Enemy", {x=290, y=256, level=6})
+	self:create("Enemy", {x=256, y=128, level=1})
+	self:create("Enemy", {x=256, y=256, level=2})
+	self:create("Enemy", {x=290, y=256, level=0})
+	self:create("Enemy", {x=390, y=156, level=0})
+	self:create("Enemy", {x=512, y=128, level=0})
 
 	local p = self:create("Pickup", {x=128, y=256}).Pickup
 	p.level = 3; p.weapon = Weapon:new('shotgun', p.level)
@@ -60,15 +62,13 @@ function GameState:draw()
 end
 
 function GameState:postDraw()
-	self.player:broadcast("drawCursor")
+	if self.player.active then
+		self.player:broadcast("drawCursor")
+	end
 	
-	--local mt,mb,ml,mr = 8,32,8,8
-	--love.graphics.rectangle("line",mt,ml,main.display.width-(ml+mr), main.display.height-(mt+mb))
-
+	-- Inventory
 	local person = self.player.Person
 	for k,v in pairs(person.weapons) do
-		--print(k)
-		--print(v)
 		local x,y = self.bounds.x + (k-0.5)*14, self.bounds.h + self.bounds.y*2
 		love.graphics.setColor(color.level(v.level))
 		love.graphics.circle("line", x, y, 4, 16)
@@ -77,18 +77,25 @@ function GameState:postDraw()
 		end
 	end
 
+	-- Boundary
 	love.graphics.setColor(255,255,255)
 	love.graphics.rectangle("line",self.bounds.x,self.bounds.y,self.bounds.w,self.bounds.h)
 
+	-- Ammo bar
 	love.graphics.rectangle("line",self.bounds.x,self.bounds.h + self.bounds.y*3,128,10)
-	love.graphics.rectangle("line",self.bounds.x+self.bounds.w-128,self.bounds.h + self.bounds.y*3,128,10)
-
 	local w = person.weapon
 	local aw = 124 * (w.ammo / w.mag)
 	if person.reloading then
 		aw = 124 * (1-(person.rt / (w.reload/60)))
 	end
 	love.graphics.rectangle("fill",self.bounds.x+2,self.bounds.h + self.bounds.y*3+2,aw,6)
+
+	-- Health bar
+	love.graphics.rectangle("line",self.bounds.x+self.bounds.w-128,self.bounds.h + self.bounds.y*3,128,10)
+	local hw = 124 * (person.health / person.max_health)
+	if hw > 0 then
+		love.graphics.rectangle("fill",self.bounds.x+self.bounds.w-128+2,self.bounds.h + self.bounds.y*3+2,hw,6)
+	end
 
 	--[[
 	local c = 0
@@ -130,6 +137,21 @@ function GameState:create(obj,properties)
 	end
 	self:spawn(e)
 	return e
+end
+
+function GameState:randomEntity(class)
+	local t = {}
+	for e,_ in pairs(self.entities) do
+		if e[class] then
+			table.insert(t, e)
+		end
+	end
+	for e,_ in pairs(self.entities_added) do
+		if e[class] then
+			table.insert(t, e)
+		end
+	end
+	return t[math.random(#t)]
 end
 
 return GameState
