@@ -49,7 +49,7 @@ Weapon.weapons = {
 		count=6,
 		reload=70,
 		spread=0.175,
-		bonus=0.7,
+		bonus=0.9,
 		recoil=0.6
 	},
 	minigun = {

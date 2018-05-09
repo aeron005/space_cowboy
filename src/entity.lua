@@ -23,6 +23,13 @@ local classes = {
 	Pickup = {
 		Physical={{friction=0.9,bounded=true}},
 		Pickup=true
+	},
+
+	Menu = {
+		Menu=true,
+		Keyboard={
+			{n="new_game",f9="screenshot"}
+		}
 	}
 }
 

@@ -6,8 +6,7 @@ local Weapon = require('classes.Weapon')
 
 function Person:init(is_player)
 	self.is_player = is_player
-	--self.weapons = { Weapon:new("pistol",1), Weapon:new("smg",0) }
-	--self:equip(1)
+	self.weapons = {}
 	for _,k in pairs({"dir","ddir","ammo","recoil","stabil","bt","rt"}) do
 		self[k] = 0
 	end
@@ -24,13 +23,12 @@ function Person.on:spawn(e)
 	end
 
 	if self.is_player then
-		self.weapons = { Weapon:new("pistol",self.level+1) }
+		self:pickupWeapon(Weapon:new("pistol",self.level+1))
 	else
-		local wtype = "pistol"
+		self:pickupWeapon(Weapon:new("pistol",self.level))
 		if self.level > 1 then
-			wtype = Weapon.random()
+			self:pickupWeapon(Weapon:new(Weapon.random(),self.level))
 		end
-		self.weapons = { Weapon:new(wtype,self.level) }
 		self.target = e.game:randomEntity("Person")
 	end
 	self:equip(1)
@@ -117,7 +115,7 @@ function Person.on:update(e, dt)
 
 	-- Health regeneration
 	if self.health < self.max_health then
-		self.health = self.health + (self.level+1)*dt
+		self.health = self.health + (self.level+1)*dt/2
 	end
 end
 
@@ -159,10 +157,20 @@ function Person:ai(e, dt)
 	local i = e.input
 	-- Movement
 	if math.random() < dt*2 then
-		i.left = math.random() < 0.5
-		i.right = math.random() < 0.5
-		i.down = math.random() < 0.5
-		i.up = math.random() < 0.5
+		if type(self.target) == 'table'
+		and self.target ~= e
+		and self.target.active then
+			local t = self.target
+			i.left = math.random() < (t.x<e.x and 0.7 or 0.3)
+			i.right = math.random() < (t.x>e.x and 0.7 or 0.3)
+			i.down = math.random() < (t.y>e.y and 0.7 or 0.3)
+			i.up = math.random() < (t.y<e.y and 0.7 or 0.3)
+		else
+			i.left = math.random() < 0.5
+			i.right = math.random() < 0.5
+			i.down = math.random() < 0.5
+			i.up = math.random() < 0.5
+		end
 		self.ddir = (math.random() - 0.5) * 4
 	end
 	-- Actions
@@ -175,6 +183,8 @@ function Person:ai(e, dt)
 	if math.random() < dt*4 then
 		if math.random() < 0.25 then
 			self.target = e.game:randomEntity("Person")
+		elseif math.random() < 0.5 then
+			self.target = e.game:randomEntity("Pickup")
 		end
 		if math.random() < 0.25 then
 			e:broadcast("action", "inv_prev")
@@ -231,10 +241,10 @@ function Person.on:collide(e,oe)
 	if oe.Bullet then
 		local b = oe.Bullet
 		if b.owner ~= e then
-			b.owner.Person:addLevel(0.015)
+			b.owner.Person:addLevel(0.005)
 			self.health = self.health - (b.level+1)*b.bonus
 			if self.health < 0 then
-				b.owner.Person:addLevel(0.1)
+				b.owner.Person:addLevel(0.05)
 				e:destroy()
 			else
 				if not self.is_player
@@ -247,25 +257,9 @@ function Person.on:collide(e,oe)
 	end
 
 	if oe.Pickup then
-		self:addLevel(0.05)
+		self:addLevel(0.005)
 		if oe.Pickup.weapon then
-			local w, match = oe.Pickup.weapon, nil
-			for id,inv in pairs(self.weapons) do
-				if w.name == inv.name
-				then
-					match = id
-				end
-			end
-			if match
-			and w.level > self.weapons[match].level
-			then
-				self.weapons[match] = w
-				if self.equipped == match then
-					self:equip(match)
-				end
-			elseif not match then
-				table.insert(self.weapons, oe.Pickup.weapon)
-			end
+			self:pickupWeapon(oe.Pickup.weapon)
 		else
 			self.health = self.health + (oe.Pickup.level+1)*3
 			if self.health > self.max_health then
@@ -273,6 +267,44 @@ function Person.on:collide(e,oe)
 			end
 		end
 		oe:destroy()
+	end
+end
+
+function Person:pickupWeapon(w)
+	local match = nil
+	w.ammo = w.mag
+	for id,inv in pairs(self.weapons) do
+		if w.name == inv.name
+		then
+			match = id
+		end
+	end
+	if match
+	and w.level > self.weapons[match].level
+	then
+		self.weapons[match] = w
+		if self.equipped == match then
+			self:equip(match)
+			self.reloading = false
+		end
+	elseif not match then
+		table.insert(self.weapons, w)
+	end
+	if self.is_player then
+		local best = 0
+		for id,w in pairs(self.weapons) do
+			best = math.max(best, math.floor(w.level))
+		end
+		self.best_weapons = {}
+		self.trash_weapons = {}
+		for id,w in pairs(self.weapons) do
+			if math.floor(w.level) == best then
+				self.best_weapons[id] = true
+			end
+			if best - math.floor(w.level) > 3 then
+				self.trash_weapons[id] = true
+			end
+		end
 	end
 end
 
