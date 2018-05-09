@@ -9,17 +9,18 @@ function GameState:init()
 	GameState.super.init(self)
 	self.entities, self.entities_added, self.entities_removed = {}, {}, {}
 	
-	self.player = self:create("Player", {x=128, y=128})
-	self:create("Enemy", {x=256, y=128, level=1})
-	self:create("Enemy", {x=256, y=256, level=2})
-	self:create("Enemy", {x=290, y=256, level=0})
-	self:create("Enemy", {x=390, y=156, level=0})
-	self:create("Enemy", {x=512, y=128, level=0})
+	self.player = self:create("Player", {x=460, y=256, level=0})
+	for i=1,10 do
+		self:create("Enemy", {x=128+i*64, y=128, level=1})
+	end
+	for i=1,10 do
+	self:create("Enemy", {x=128+i*64, y=320, level=0})
+	end
 
-	local p = self:create("Pickup", {x=128, y=256}).Pickup
+	local p = self:create("Pickup", {x=128, y=128}).Pickup
 	p.level = 3; p.weapon = Weapon:new('shotgun', p.level)
 
-	p = self:create("Pickup", {x=384, y=128}).Pickup
+	p = self:create("Pickup", {x=384, y=320}).Pickup
 	p.level = 2; p.weapon = Weapon:new('combat', p.level)
 
 	local mt,mb,ml,mr = 8,32,8,8

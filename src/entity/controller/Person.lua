@@ -8,7 +8,7 @@ function Person:init(is_player)
 	self.is_player = is_player
 	--self.weapons = { Weapon:new("pistol",1), Weapon:new("smg",0) }
 	--self:equip(1)
-	for _,k in pairs({"dir","ddir","ammo","recoil","stabil","bt","rt","ct"}) do
+	for _,k in pairs({"dir","ddir","ammo","recoil","stabil","bt","rt"}) do
 		self[k] = 0
 	end
 	for _,k in pairs({"reloading"}) do
@@ -36,7 +36,7 @@ end
 
 function Person:setLevel(lvl)
 	self.level = lvl
-	self.max_health = (self.level + 1)*6
+	self.max_health = (self.level + 2)*6
 	self.radius = 8 + self.level/4
 	self.Entity.radius = self.radius
 	self.color = color.level(self.level)
@@ -45,15 +45,18 @@ end
 function Person:equip(wi)
 	self.equipped =  wi
 	self.weapon = self.weapons[wi]
+	if self.weapon.ammo < 1 then
+		self:reload()
+	end
 end
 
 function Person.on:update(e, dt)
 	local i = e.input
 	local left, right, up, down = i.left, i.right, i.up, i.down
 	local speed = 100
-	
 	e.dx, e.dy = 0, 0
 
+	-- Aiming and AI
 	if self.is_player then
 		local mx, my = main:mouseX(), main:mouseY()
 		self.dir = math.atan2(my-e.y,mx-e.x)
@@ -61,6 +64,7 @@ function Person.on:update(e, dt)
 		self:ai(e,dt)
 	end
 
+	-- Movement
 	if left then
 		e.dx = e.dx-speed
 	end
@@ -74,37 +78,14 @@ function Person.on:update(e, dt)
 		e.dy = e.dy+speed
 	end
 	
+	-- Shooting
 	self.bt = self.bt - dt
-	if i.shoot and not self.reloading then
-		if self.bt < 0 then
-			local w = self.weapon
-			
-			for i=1,w.count do
-				local vel = (10 + math.random()*w.bonus)*60
-				local rr = self.radius + 4
-				local dir = self.dir + self.recoil + math.random()*w.spread*2-w.spread
-				local sx,sy = rr*math.cos(self.dir), rr*math.sin(self.dir)
-				local dx,dy = vel*math.cos(dir), vel*math.sin(dir)
-				local b = e.game:create("Bullet",{x=e.x+sx,y=e.y+sy,dx=dx,dy=dy})
-				b.Bullet.dir = dir
-				b.Bullet.color = color.level(w.level)
-				b.Bullet.level = w.level
-				b.Bullet.is_player = self.is_player
-				b.Bullet.owner = e
-				b.Bullet.bonus = w.bonus
-				b:broadcast("render")
-			end
-			w.ammo = w.ammo - 1
-			if w.ammo == 0 then
-				self.rt = w.reload/60
-				self.reloading = true
-			end
-			self.bt = w.rate/60
-			self.recoil = self.recoil + (w.recoil*math.random()*2-w.recoil)
-			self.stabil = self.stabil + w.recoil
-		end
+	if i.shoot 
+	and not self.reloading then
+		self:shoot(e)
 	end
 
+	-- Stability
 	if left or right or up or down then
 		self.recoil = self.recoil - self.recoil*dt*2
 		self.stabil = self.stabil - self.stabil*dt*4
@@ -113,6 +94,7 @@ function Person.on:update(e, dt)
 		self.stabil = self.stabil - self.stabil*dt*6
 	end
 
+	-- Reloading
 	if self.reloading then
 		self.rt = self.rt - dt
 		if self.rt <= 0 then
@@ -122,15 +104,49 @@ function Person.on:update(e, dt)
 		end
 	end
 
+	-- Health regeneration
 	if self.health < self.max_health then
 		self.health = self.health + (self.level+1)*dt/3
 	end
+end
 
-	self.ct = self.ct + dt % math.pi
+function Person:shoot(e)
+	if self.bt < 0 then
+		local w = self.weapon
+		
+		for i=1,w.count do
+			local vel = (10 + math.random()*w.bonus)*60
+			local rr = self.radius + 4
+			local dir = self.dir + self.recoil + math.random()*w.spread*2-w.spread
+			local sx,sy = rr*math.cos(self.dir), rr*math.sin(self.dir)
+			local dx,dy = vel*math.cos(dir), vel*math.sin(dir)
+			local b = e.game:create("Bullet",{x=e.x+sx,y=e.y+sy,dx=dx,dy=dy})
+			b.Bullet.dir = dir
+			b.Bullet.color = color.level(w.level)
+			b.Bullet.level = w.level
+			b.Bullet.is_player = self.is_player
+			b.Bullet.owner = e
+			b.Bullet.bonus = w.bonus
+			b:broadcast("render")
+		end
+		w.ammo = w.ammo - 1
+		if w.ammo < 1 then
+			self:reload()
+		end
+		self.bt = w.rate/60
+		self.recoil = self.recoil + (w.recoil*math.random()*2-w.recoil)
+		self.stabil = self.stabil + w.recoil
+	end
+end
+
+function Person:reload()
+	self.rt = self.weapon.reload/60
+	self.reloading = true
 end
 
 function Person:ai(e, dt)
 	local i = e.input
+	-- Movement
 	if math.random() < dt*4 then
 		i.left = math.random() > 0.5
 		i.right = math.random() > 0.5
@@ -138,11 +154,20 @@ function Person:ai(e, dt)
 		i.up = math.random() > 0.5
 		i.shoot = math.random() > 0.5
 		self.ddir = (math.random() - 0.5) * 4
-
+	end
+	-- Actions
+	if math.random() < dt*4 then
 		if math.random() < 0.25 then
 			self.target = e.game:randomEntity("Person")
 		end
+		if math.random() < 0.25 then
+			e:broadcast("action", "inv_prev")
+		end
+		if math.random() < 0.25 then
+			e:broadcast("action", "inv_next")
+		end
 	end
+	-- Targeting
 	if type(self.target) == 'table'
 	and self.target ~= e
 	and self.target.active then
@@ -168,6 +193,41 @@ function Person.on:action(e, action)
 			if ni > #self.weapons then ni = 1 end
 			self:equip(ni)
 		end
+		if action == "reload" then
+			if self.weapon.ammo ~= self.weapon.mag then
+				self:reload()
+			end
+		end
+	end
+end
+
+function Person.on:destroy(e)
+	if math.random() < 0.2 then
+		local rd, ri = math.random()*math.pi*2, math.random()*160+160
+		local dx, dy = ri*math.cos(rd), ri*math.sin(rd)
+		local p = e.game:create("Pickup", {x=e.x, y=e.y, dx=dx, dy=dy}).Pickup
+		p.weapon = self.weapon
+	end
+end
+
+function Person.on:collide(e,oe)
+
+	if oe.Bullet then
+		local b = oe.Bullet
+		if b.owner ~= e then
+			oe:destroy()
+			self.health = self.health - (b.level+1)*b.bonus
+			if self.health < 0 then
+				e:destroy()
+			end
+		end
+	end
+
+	if oe.Pickup then
+		if oe.Pickup.weapon then
+			table.insert(self.weapons, oe.Pickup.weapon)
+		end
+		oe:destroy()
 	end
 end
 
@@ -226,29 +286,6 @@ function Person.on:drawCursor(e)
 	love.graphics.circle("line",0,0,0.1,8)
 
 	love.graphics.pop()
-end
-
-function Person.on:collide(e,oe)
-
-	if oe.Bullet then
-		local b = oe.Bullet
-		if b.owner ~= e then
-			oe:destroy()
-			self.health = self.health - (b.level+1)*b.bonus
-			if self.health < 0 then
-				e:destroy()
-			end
-		end
-	end
-
-
-	if oe.Pickup then
-		if oe.Pickup.weapon then
-			table.insert(self.weapons, oe.Pickup.weapon)
-			--self:equip(#self.weapons)
-		end
-		oe:destroy()
-	end
 end
 
 return Person

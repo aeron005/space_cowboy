@@ -3,7 +3,7 @@ local classes = {
 		Physical={{bounded=true}},
 		Person={true},
 		Keyboard={
-			{w="up",s="down",a="left",d="right",space="shoot"}
+			{w="up",s="down",a="left",d="right",space="shoot",r="reload",q="inv_prev",e="inv_next"}
 		},
 		Mouse={
 			{l="shoot", wu="inv_prev", wd="inv_next"}
@@ -21,7 +21,7 @@ local classes = {
 	},
 
 	Pickup = {
-		Physical=true,
+		Physical={{friction=0.9,bounded=true}},
 		Pickup=true
 	}
 }

@@ -12,7 +12,7 @@ end
 
 function Pickup.on:draw(e)
 	local x,y = math.floor(e.x), math.floor(e.y)
-	love.graphics.setColor(color.level(self.level))
+	love.graphics.setColor(color.level(self.weapon.level))
 	love.graphics.circle("line", x, y, 4, 16)
 	love.graphics.circle("fill", x, y, 2, 16)
 
