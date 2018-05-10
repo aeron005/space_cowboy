@@ -42,6 +42,7 @@ function Person:setLevel(lvl)
 	self.radius = 8 + self.level/4
 	self.Entity.radius = self.radius
 	self.color = color.fulllevel(self.level)
+	self.basecolor = color.level(self.level)
 	if self.is_player then
 		self.class = "L"..(math.floor(self.level*10)/10).." "..color.name(self.level).." "..color.class(self.level)
 	end
@@ -174,7 +175,7 @@ function Person:ai(e, dt)
 		self.ddir = (math.random() - 0.5) * 4
 	end
 	-- Actions
-	if i.shoot and math.random() < dt*32 then
+	if i.shoot and math.random() < dt*8 then
 		i.shoot = math.random() < 0.125
 	end
 	if math.random() < dt*4 then
@@ -236,7 +237,7 @@ function Person.on:destroy(e)
 		p.level = self.weapon.level
 	end
 	local expl = e.game:create("Explosion", {x=e.x, y=e.y}).Explosion
-	expl:setColor(self.color)
+	expl:setColor(self.basecolor)
 	if self.is_player then
 		e.game:create("Explosion", {x=e.x, y=e.y})
 	end
@@ -330,9 +331,10 @@ function Person.on:draw(e)
 	if self.is_player then
 		love.graphics.setColor(255,255,255)
 	else
-		love.graphics.setColor(self.color)
+		love.graphics.setColor(self.basecolor)
 	end
 	love.graphics.circle("line", e.x, e.y, self.radius, 32)
+	love.graphics.setColor(self.weapon.color)
 	love.graphics.line(e.x, e.y, e.x+self.radius*math.cos(self.dir), e.y+self.radius*math.sin(self.dir))
 end
 
