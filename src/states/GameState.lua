@@ -3,6 +3,7 @@ local GameState = State:extend("GameState")
 
 local new = require('entity').create
 local Weapon = require('classes.Weapon')
+local Sound = require('classes.Sound')
 local color = require('util.color')
 
 function GameState:init()
@@ -21,9 +22,11 @@ function GameState:init()
 	self.menu = self:create("Menu")
 	self.player = self:create("Player", {x=main.display.width/2, y=self.bounds.y+self.bounds.h/2, level=0})
 	self:wave(true)
+	Sound.vox("welcome")
 end
 
 function GameState:wave(guaranteed)
+	Sound.play("round")
 	local baselevel = self.player.Person.level or self.player.level
 	local lvl,x,y
 	if math.random() < 0.0015 then
@@ -35,6 +38,7 @@ function GameState:wave(guaranteed)
 			lvl = baselevel+math.random()
 			self:create("Enemy", {x=128+i*64, y=320, level=lvl})
 		end
+		Sound.vox({"rare1","rare2","rare3","rare4","rare5"},2)
 	elseif math.random() < 0.0025 then
 		local cx, cy, cr = main.display.width/2, main.display.height/2, main.display.height*3/8
 		for i=0,9 do
@@ -45,10 +49,11 @@ function GameState:wave(guaranteed)
 				self:create("Enemy", {x=x, y=y, level=lvl})
 			end
 		end
+		Sound.vox({"rare1","rare2","rare3","rare4","rare5"},2)
 	else
 		for i=0,9 do
 			if math.random() < 0.125 or (i<2 and guaranteed) then
-				lvl = baselevel+math.random()-(baselevel/3)*math.random()
+				lvl = baselevel+math.random()-(baselevel/2)*math.random()
 				x,y = self:randomPosition(16+lvl/4)
 				self:create("Enemy", {x=x,y=y,level=lvl})
 			end
@@ -99,14 +104,21 @@ function GameState:update(dt)
 		self.entities[e] = nil
 		if e.Person and not e.Person.is_player then
 			self.enemies = self.enemies - 1
+			if self.enemies < 1 then
+				Sound.vox({"clear1","clear2","clear3","clear4","clear5"},3)
+				self.player.Person:addLevel(0.25)
+			end
 		end
 	end
 	self.entities_removed = {}
 	if math.random() < dt/8 
-	or (self.enemies < 2 and math.random() < dt*2)
+	or (self.enemies < 2 and math.random() < dt/8)
+	or (self.enemies < 1 and math.random() < dt*2)
 	then
 		self:wave()
 	end
+
+	love.audio.setPosition(self.player.x, self.player.y, 40)
 end
 
 function GameState:draw()

@@ -3,6 +3,7 @@ inspect = require('util.inspect')
 math.randomseed(os.time()) 
 
 local State = require('classes.State')
+local Sound = require('classes.Sound')
 main = State:new()
 
 function love.load()
@@ -45,6 +46,10 @@ function love.resize(sw, sh)
 		main.display.x, main.display.y = (sw - cw*main.display.scale)/2, 0
 	end
 	--]]
+end
+
+function main:update()
+	Sound.update()
 end
 
 function main:draw()

@@ -3,6 +3,7 @@ local Person = Component:extend("Person")
 
 local color = require('util.color')
 local Weapon = require('classes.Weapon')
+local Sound = require('classes.Sound')
 
 function Person:init(is_player)
 	self.is_player = is_player
@@ -45,6 +46,12 @@ function Person:setLevel(lvl)
 	self.basecolor = color.level(self.level)
 	if self.is_player then
 		self.class = "L"..(math.floor(self.level*10)/10).." "..color.name(self.level).." "..color.class(self.level)
+		if self.prev_level then
+			if math.floor(self.level) > self.prev_level then
+				Sound.vox("levelup")
+			end
+		end
+		self.prev_level = math.floor(self.level)
 	end
 end
 
@@ -146,12 +153,18 @@ function Person:shoot(e)
 		self.bt = w.rate/60
 		self.recoil = self.recoil + (w.recoil*math.random()*2-w.recoil)
 		self.stabil = self.stabil + w.recoil
+		if w.sound then
+			Sound.play(w.sound,e.x,e.y)
+		end
 	end
 end
 
 function Person:reload()
 	self.rt = self.weapon.reload/60
 	self.reloading = true
+	if self.is_player then
+		Sound.play("reload")
+	end
 end
 
 function Person:ai(e, dt)
@@ -181,10 +194,10 @@ function Person:ai(e, dt)
 	if math.random() < dt*4 then
 		i.shoot = math.random() < 0.5
 	end
-	if math.random() < dt*4 then
+	if math.random() < dt*2 then
 		if math.random() < 0.25 then
 			self.target = e.game:randomEntity("Person")
-		elseif math.random() < 0.5 then
+		elseif math.random() < 0.25 then
 			self.target = e.game:randomEntity("Pickup")
 		end
 		if math.random() < 0.25 then
@@ -219,6 +232,9 @@ function Person.on:action(e, action)
 			if ni < 1 then ni = #self.weapons end
 			if ni > #self.weapons then ni = 1 end
 			self:equip(ni)
+			if self.is_player then
+				Sound.play("select")
+			end
 		end
 		if action == "reload" then
 			if self.weapon.ammo ~= self.weapon.mag then
@@ -229,22 +245,31 @@ function Person.on:action(e, action)
 end
 
 function Person.on:destroy(e)
+	if self.is_player then
+		local expl = e.game:create("Explosion", {x=e.x, y=e.y}).Explosion
+		expl.is_player = true
+		expl.max_time = 3
+		expl:setColor({255,255,255}, self.color)
+
+		if (math.random() < 0.0125 and self.level < 3)
+		or (math.random() < 0.125 and self.level < 1)
+		then
+			Sound.vox({"insult1","insult2","insult3","insult4","insult5"},2)
+		else
+			Sound.vox("gameover")
+		end
+	else
+		local expl = e.game:create("Explosion", {x=e.x, y=e.y}).Explosion
+		expl:setColor(self.basecolor, self.color)
+	end
+	Sound.play("die",e.x,e.y)
+
 	if math.random() < 0.2 then
 		local rd, ri = math.random()*math.pi*2, math.random()*160+160
 		local dx, dy = ri*math.cos(rd), ri*math.sin(rd)
 		local p = e.game:create("Pickup", {x=e.x, y=e.y, dx=dx, dy=dy}).Pickup
 		p.weapon = self.weapon
 		p.level = self.weapon.level
-	end
-
-	if self.is_player then
-		local expl = e.game:create("Explosion", {x=e.x, y=e.y}).Explosion
-		expl.is_player = true
-		expl.max_time = 3
-		expl:setColor({255,255,255}, self.color)
-	else
-		local expl = e.game:create("Explosion", {x=e.x, y=e.y}).Explosion
-		expl:setColor(self.basecolor, self.color)
 	end
 end
 
@@ -257,11 +282,18 @@ function Person.on:collide(e,oe)
 			if self.health < 0 then
 				b.owner.Person:addLevel(0.05)
 				e:destroy()
+				if math.random() < 0.125
+				and b.owner.Person.is_player then
+					Sound.vox({"compliment1","compliment2","compliment3","compliment4","compliment5"},4)
+				end
 			else
 				if not self.is_player
-				and math.random() < 0.125 then
+				and math.random() < 0.25 then
 					self.target = b.owner
 				end
+			end
+			if self.is_player then
+				Sound.play("hit",e.x,e.y)
 			end
 			oe:destroy()
 		end
@@ -277,6 +309,9 @@ function Person.on:collide(e,oe)
 				self.health = self.max_health
 			end
 		end
+		if self.is_player then
+			Sound.play("pickup",e.x,e.y)
+		end
 		oe:destroy()
 	end
 end
@@ -285,8 +320,7 @@ function Person:pickupWeapon(w)
 	local match = nil
 	w.ammo = w.mag
 	for id,inv in pairs(self.weapons) do
-		if w.name == inv.name
-		then
+		if w.name == inv.name then
 			match = id
 		end
 	end
@@ -298,8 +332,14 @@ function Person:pickupWeapon(w)
 			self:equip(match)
 			self.reloading = false
 		end
+		if self.is_player then
+			Sound.vox("upgraded")
+		end
 	elseif not match then
 		table.insert(self.weapons, w)
+		if self.is_player and #self.weapons > 1 then
+			Sound.vox("new")
+		end
 	end
 	if self.is_player then
 		local best = 0

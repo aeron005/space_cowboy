@@ -4,6 +4,7 @@ local color = require('util.color')
 Weapon.weapons = {
 	pistol = {
 		display="Pistol",
+		sound="pistol",
 		rate=14,
 		mag=8,
 		count=1,
@@ -14,6 +15,7 @@ Weapon.weapons = {
 	},
 	revolver = {
 		display="Revolver",
+		sound="revolver",
 		rate=18,
 		mag=6,
 		count=1,
@@ -24,6 +26,7 @@ Weapon.weapons = {
 	},
 	smg = {
 		display="SMG",
+		sound="smg",
 		rate=5,
 		mag=14,
 		count=1,
@@ -34,6 +37,7 @@ Weapon.weapons = {
 	},
 	assault = {
 		display="Assault Rifle",
+		sound="assault",
 		rate=8,
 		mag=24,
 		count=1,
@@ -44,6 +48,7 @@ Weapon.weapons = {
 	},
 	shotgun = {	
 		display="Shotgun",
+		sound="shotgun",
 		rate=30,
 		mag=2,
 		count=6,
@@ -54,6 +59,7 @@ Weapon.weapons = {
 	},
 	minigun = {
 		display="Minigun",
+		sound="minigun",
 		rate=6,
 		mag=50,
 		count=1,
@@ -64,6 +70,7 @@ Weapon.weapons = {
 	},
 	combat = {
 		display="Combat Shotgun",
+		sound="shotgun2",
 		rate=25,
 		mag=6,
 		count=4,
@@ -74,6 +81,7 @@ Weapon.weapons = {
 	},
 	triple = {
 		display="Tripleshot",
+		sound="tripleshot",
 		rate=25,
 		mag=4,
 		count=3,
@@ -84,6 +92,7 @@ Weapon.weapons = {
 	},
 	double = {
 		display="Doubletap",
+		sound="double",
 		rate=25,
 		mag=4,
 		count=2,
@@ -94,6 +103,7 @@ Weapon.weapons = {
 	},
 	sniper = {
 		display="Sniper",
+		sound="sniper",
 		rate=40,
 		mag=1,
 		count=1,
