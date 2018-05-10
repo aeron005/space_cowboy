@@ -21,7 +21,7 @@ local classes = {
 	},
 
 	Pickup = {
-		Physical={{friction=0.9,bounded=true}},
+		Physical={{friction=0.9,radius=3,bounded=true}},
 		Pickup=true
 	},
 	

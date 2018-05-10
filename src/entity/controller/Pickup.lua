@@ -15,14 +15,15 @@ function Pickup.on:draw(e)
 	love.graphics.setColor(color.level(self.level))
 
 	if self.weapon then
-		love.graphics.circle("line", x, y, 4, 16)
-		love.graphics.circle("fill", x, y, 2, 16)
+		love.graphics.circle("line", x, y, 6, 16)
+		love.graphics.circle("fill", x, y, 3, 16)
 		love.graphics.setFont(main.font.game)
-		love.graphics.printf(self.weapon.fullname,x-128,y+6,256,"center")
+		love.graphics.printf(self.weapon.fullname,x-128,y+8,256,"center")
 	else
-		love.graphics.circle("line", x, y, 4, 16)
-		love.graphics.rectangle("fill", x-1, y-4, 2, 8)
-		love.graphics.rectangle("fill", x-4, y-1, 8, 2)
+		love.graphics.circle("line", x, y, 6, 16)
+		local cs,cw = 6,2
+		love.graphics.rectangle("fill", x-cw/2, y-cs/2, cw, cs)
+		love.graphics.rectangle("fill", x-cs/2, y-cw/2, cs, cw)
 	end
 end
 
