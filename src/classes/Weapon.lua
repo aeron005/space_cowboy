@@ -14,12 +14,12 @@ Weapon.weapons = {
 	},
 	revolver = {
 		display="Revolver",
-		rate=20,
+		rate=18,
 		mag=6,
 		count=1,
 		reload=55,
 		spread=0.025,
-		bonus=2.5,
+		bonus=2.75,
 		recoil=0.15
 	},
 	smg = {
@@ -34,7 +34,7 @@ Weapon.weapons = {
 	},
 	assault = {
 		display="Assault Rifle",
-		rate=7,
+		rate=8,
 		mag=24,
 		count=1,
 		reload=80,
@@ -49,7 +49,7 @@ Weapon.weapons = {
 		count=6,
 		reload=70,
 		spread=0.175,
-		bonus=0.9,
+		bonus=1.1,
 		recoil=0.6
 	},
 	minigun = {
@@ -64,22 +64,42 @@ Weapon.weapons = {
 	},
 	combat = {
 		display="Combat Shotgun",
-		rate=20,
+		rate=25,
 		mag=6,
 		count=4,
-		reload=160,
-		spread=0.1,
-		bonus=1.0,
-		recoil=0.4
+		reload=140,
+		spread=0.125,
+		bonus=1.2,
+		recoil=0.3
+	},
+	triple = {
+		display="Tripleshot",
+		rate=25,
+		mag=4,
+		count=3,
+		reload=95,
+		spread=0.05,
+		bonus=1.7,
+		recoil=0.25
+	},
+	double = {
+		display="Doubletap",
+		rate=25,
+		mag=4,
+		count=2,
+		reload=50,
+		spread=0.04,
+		bonus=2.0,
+		recoil=0.35
 	},
 	sniper = {
 		display="Sniper",
 		rate=40,
 		mag=1,
 		count=1,
-		reload=80,
+		reload=40,
 		spread=0.03,
-		bonus=4.5,
+		bonus=4.0,
 		recoil=0.3
 	}
 }
@@ -107,5 +127,19 @@ end
 function Weapon.random()
 	return Weapon.names[math.random(#Weapon.names)]
 end
+
+function Weapon.debug()
+	for id,w in pairs(Weapon.weapons) do
+		local time = w.rate*w.mag + w.reload
+		if w.mag == 1 then time = w.reload end
+		local damage = w.count * w.bonus * w.mag
+		local dps = math.floor(damage/time*1000)/1000
+
+		--print("="..id.."=")
+		--print("time:"..time.."\tdamage:"..damage.."\tdps:"..dps)
+		print(id..":\t"..dps)
+	end
+end
+--Weapon.debug()
 
 return Weapon
