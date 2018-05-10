@@ -16,12 +16,13 @@ function Explosion:init()
 	self:setColor({255,255,255})
 end
 
-function Explosion:setColor(c)
+function Explosion:setColor(c,c2)
 	self.system:setColors(
 		c[1], c[2], c[3], 200, 
 		c[1], c[2], c[3], 0
 	)
 	self.color = c
+	self.color2 = c2 or c
 end
 
 function Explosion.on:spawn(e)
@@ -42,11 +43,18 @@ end
 function Explosion.on:draw(e)
 	love.graphics.draw(self.system, e.x, e.y)
 
-	local c = {unpack(self.color)}
+	local c = {unpack(self.color2)}
 	local t = (self.time/self.max_time)
-	c[4] = 48*((1-t)^4)
+	c[4] = 32*((1-t)^4)
 	love.graphics.setColor(c)
 	love.graphics.draw(main.images.ring, e.x, e.y, 0, t*2, t*2, 256, 256)
+
+	for i=0,9 do
+		local d,p = (i/10)*math.pi*2, 512
+		local x,y = p*t*math.cos(d), p*t*math.sin(d)
+		love.graphics.draw(main.images.spark, e.x+x, e.y+y, d, 1, 1, 128, 128)
+		love.graphics.draw(main.images.spark, e.x+x*2, e.y+y*2, d+math.pi/2, 0.25, 1, 128, 128)
+	end
 end
 
 return Explosion

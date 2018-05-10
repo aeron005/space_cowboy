@@ -236,10 +236,13 @@ function Person.on:destroy(e)
 		p.weapon = self.weapon
 		p.level = self.weapon.level
 	end
-	local expl = e.game:create("Explosion", {x=e.x, y=e.y}).Explosion
-	expl:setColor(self.basecolor)
+
 	if self.is_player then
-		e.game:create("Explosion", {x=e.x, y=e.y})
+		local expl = e.game:create("Explosion", {x=e.x, y=e.y}).Explosion
+		expl:setColor({255,255,255}, self.color)
+	else
+		local expl = e.game:create("Explosion", {x=e.x, y=e.y}).Explosion
+		expl:setColor(self.basecolor, self.color)
 	end
 end
 
