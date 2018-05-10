@@ -55,7 +55,7 @@ function GameState:wave(guaranteed)
 		end
 	end
 	
-	if math.random() < 0.125 then
+	if math.random() < 0.25 then
 		lvl = baselevel+math.random()*2
 		x,y = self:randomPosition(32)
 		local p = self:create("Pickup", {x=x, y=y}).Pickup
