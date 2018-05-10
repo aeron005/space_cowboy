@@ -239,6 +239,8 @@ function Person.on:destroy(e)
 
 	if self.is_player then
 		local expl = e.game:create("Explosion", {x=e.x, y=e.y}).Explosion
+		expl.is_player = true
+		expl.max_time = 3
 		expl:setColor({255,255,255}, self.color)
 	else
 		local expl = e.game:create("Explosion", {x=e.x, y=e.y}).Explosion

@@ -76,6 +76,7 @@ end
 
 function GameState:update(dt)
 	for e,_ in pairs(self.entities_added) do
+		e:broadcast("spawn")
 		self.entities[e] = true
 		if e.Person and not e.Person.is_player then
 			self.enemies = self.enemies + 1
@@ -208,7 +209,6 @@ end
 
 function GameState:spawn(e)
 	self.entities_added[e] = true
-	e:broadcast("spawn")
 end
 
 function GameState:create(obj,properties)

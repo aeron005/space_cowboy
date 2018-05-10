@@ -78,7 +78,7 @@ Weapon.weapons = {
 		mag=4,
 		count=3,
 		reload=95,
-		spread=0.05,
+		spread=0.06,
 		bonus=1.7,
 		recoil=0.25
 	},
@@ -88,7 +88,7 @@ Weapon.weapons = {
 		mag=4,
 		count=2,
 		reload=50,
-		spread=0.04,
+		spread=0.05,
 		bonus=2.0,
 		recoil=0.35
 	},
