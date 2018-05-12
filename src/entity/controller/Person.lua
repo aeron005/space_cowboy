@@ -132,7 +132,7 @@ function Person:shoot(e)
 		local w = self.weapon
 		
 		for i=1,w.count do
-			local vel = (10 + math.random()*w.bonus)*60
+			local vel = (16 + math.random()*w.bonus)*30
 			local rr = self.radius + 4
 			local dir = self.dir + self.recoil + math.random()*w.spread*2-w.spread
 			local sx,sy = rr*math.cos(self.dir), rr*math.sin(self.dir)
@@ -394,11 +394,11 @@ function Person.on:drawCursor(e)
 	love.graphics.rotate(self.dir)
 
 	local sc = 512
-	c[4] = math.pow((sc-math.min(math.max(0, rr),sc))/sc,2)*24
+	c[4] = math.pow((sc-math.min(math.max(0, rr),sc))/sc,2)*48
 	love.graphics.setColor(c)
 	love.graphics.circle("fill",0,0,rr,64)
 
-	c[4] = 64
+	c[4] = 128
 	love.graphics.setColor(c)
 	--love.graphics.rectangle("fill",-1,-12-r,2,8)
 	--love.graphics.rectangle("fill",-1,r+4,2,8)
@@ -409,7 +409,7 @@ function Person.on:drawCursor(e)
 	--love.graphics.rectangle("fill",-16,-1,8,2)
 	--love.graphics.rectangle("fill",8,-1,8,2)
 
-	c[4] = 128
+	c[4] = 192
 	love.graphics.setColor(c)
 	--love.graphics.circle("line",0,0,rr,64)
 	love.graphics.circle("line",0,0,0.1,8)

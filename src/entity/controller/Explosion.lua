@@ -53,12 +53,12 @@ function Explosion.on:draw(e)
 	else
 		c = {unpack(self.color2)}
 	end
-	c[4] = 32*((1-t)^4)
+	c[4] = 48*((1-t)^4)
 	love.graphics.setColor(c)
 	love.graphics.draw(main.images.ring, e.x, e.y, 0, t*2, t*2, 256, 256)
 
 	c = {unpack(self.color2)}
-	c[4] = 32*((1-t)^4)
+	c[4] = 48*((1-t)^4)
 	for i=0,9 do
 		local d,p = (i/10)*math.pi*2, 512
 		local x,y = p*t*math.cos(d), p*t*math.sin(d)
@@ -67,7 +67,7 @@ function Explosion.on:draw(e)
 	end
 
 	if self.is_player then
-		c[4] = 64*((1-t)^4)
+		c[4] = 96*((1-t)^4)
 		love.graphics.setColor(c)
 		love.graphics.draw(main.images.ring, e.x, e.y, 0, t*4, t*4, 256, 256)
 	end
