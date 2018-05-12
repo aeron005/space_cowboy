@@ -26,7 +26,11 @@ function Person.on:spawn(e)
 	if self.is_player then
 		self:pickupWeapon(Weapon:new("pistol",self.level+1))
 	else
-		self:pickupWeapon(Weapon:new("pistol",self.level))
+		if math.random() < 0.25 then
+			self:pickupWeapon(Weapon:new(Weapon.random("common"),self.level))
+		else
+			self:pickupWeapon(Weapon:new("pistol",self.level))
+		end
 		if self.level > 1 then
 			self:pickupWeapon(Weapon:new(Weapon.random(),self.level))
 		end

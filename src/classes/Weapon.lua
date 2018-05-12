@@ -101,6 +101,17 @@ Weapon.weapons = {
 		bonus=2.0,
 		recoil=0.35
 	},
+	burst = {
+		display="Burst",
+		sound="minigun",
+		rate=4,
+		mag=3,
+		count=1,
+		reload=20,
+		spread=0.075,
+		bonus=2.0,
+		recoil=0.05
+	},
 	sniper = {
 		display="Sniper",
 		sound="sniper",
@@ -111,6 +122,28 @@ Weapon.weapons = {
 		spread=0.03,
 		bonus=4.0,
 		recoil=0.3
+	}
+}
+
+Weapon.classes = {
+	common = {
+		"pistol",
+		"revolver",
+		"smg",
+		"shotgun",
+	},
+	
+	rare = {	
+		"assault",
+		"combat",
+		"minigun",
+		"sniper",
+	},
+
+	legendary = {
+		"diouble",
+		"triple",
+		"burst"
 	}
 }
 
@@ -130,12 +163,14 @@ function Weapon:init(name, level)
 	self.fullname = "L"..math.floor(self.level).." "..(color.name(self.level)).." "..self.display
 end
 
-Weapon.names = {}
-for id,_ in pairs(Weapon.weapons) do
-	table.insert(Weapon.names, id)
-end
-function Weapon.random()
-	return Weapon.names[math.random(#Weapon.names)]
+function Weapon.random(class)
+	if not class then
+		local names = {"common","rare","legendary"}
+		local n = #names
+		class = names[math.floor(1+n*(math.random()^3))]
+	end
+	local names = Weapon.classes[class] or Weapon.classes.common
+	return names[math.random(#names)]
 end
 
 function Weapon.debug()
