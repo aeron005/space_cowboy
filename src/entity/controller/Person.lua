@@ -43,11 +43,10 @@ end
 
 function Person:setLevel(lvl)
 	self.level = lvl
-	self.max_health = (self.level + 2)*6
-	self.radius = 8 + self.level/4
+	self.max_health = (1.5^math.floor(self.level+1))*4
+	self.radius = 8
 	self.Entity.radius = self.radius
-	self.color = color.fulllevel(self.level)
-	self.basecolor = color.level(self.level)
+	self.color = color.level(self.level)
 	if self.is_player then
 		self.class = "L"..(math.floor(self.level*10)/10).." "..color.name(self.level).." "..color.class(self.level)
 		if self.prev_level then
@@ -127,7 +126,7 @@ function Person.on:update(e, dt)
 
 	-- Health regeneration
 	if self.health < self.max_health then
-		self.health = self.health + (self.level+1)*dt/2
+		self.health = self.health + self.max_health*dt/16
 	end
 end
 
@@ -264,7 +263,7 @@ function Person.on:destroy(e)
 		end
 	else
 		local expl = e.game:create("Explosion", {x=e.x, y=e.y}).Explosion
-		expl:setColor(self.basecolor, self.color)
+		expl:setColor(self.color, self.basecolor)
 	end
 	Sound.play("die",e.x,e.y)
 
@@ -281,10 +280,10 @@ function Person.on:collide(e,oe)
 	if oe.Bullet then
 		local b = oe.Bullet
 		if b.owner ~= e then
-			b.owner.Person:addLevel(0.005)
-			self.health = self.health - (b.level+1)*b.bonus
+			b.owner.Person:addLevel(0.0025)
+			self.health = self.health - (1.5^b.level)*b.bonus
 			if self.health < 0 then
-				b.owner.Person:addLevel(0.05)
+				b.owner.Person:addLevel(0.025)
 				e:destroy()
 				if math.random() < 0.125
 				and b.owner.Person.is_player then
@@ -304,11 +303,11 @@ function Person.on:collide(e,oe)
 	end
 
 	if oe.Pickup then
-		self:addLevel(0.005)
+		self:addLevel(0.0025)
 		if oe.Pickup.weapon then
 			self:pickupWeapon(oe.Pickup.weapon)
 		else
-			self.health = self.health + (oe.Pickup.level+1)*3
+			self.health = self.health + (1.5^oe.Pickup.level)*3
 			if self.health > self.max_health then
 				self.health = self.max_health
 			end
@@ -380,7 +379,7 @@ function Person.on:draw(e)
 	if self.is_player then
 		love.graphics.setColor(255,255,255)
 	else
-		love.graphics.setColor(self.basecolor)
+		love.graphics.setColor(self.color)
 	end
 	love.graphics.circle("line", e.x, e.y, self.radius, 32)
 	love.graphics.setColor(self.weapon.color)

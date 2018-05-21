@@ -157,7 +157,7 @@ function Weapon:init(name, level)
 	for k,v in pairs(w) do
 		self[k] = v
 	end
-	self.level = level
+	self.level = math.floor(level)
 	self.color = color.level(self.level)
 	self.ammo = self.mag
 	self.fullname = "L"..math.floor(self.level).." "..(color.name(self.level)).." "..self.display

@@ -42,7 +42,7 @@ function GameState:wave(guaranteed)
 	elseif math.random() < 0.0025 then
 		local cx, cy, cr = main.display.width/2, main.display.height/2, main.display.height*3/8
 		for i=0,9 do
-			if math.random() < 0.5 then
+			if math.random() < 0.75 then
 				local dir=(i/10)*math.pi*2
 				x,y = cx+cr*math.cos(dir), cy+cr*math.sin(dir)
 				lvl = baselevel+math.random()
@@ -106,7 +106,7 @@ function GameState:update(dt)
 			self.enemies = self.enemies - 1
 			if self.enemies < 1 then
 				Sound.vox({"clear1","clear2","clear3","clear4","clear5"},3)
-				self.player.Person:addLevel(0.25)
+				self.player.Person:addLevel(0.125)
 			end
 		end
 	end
