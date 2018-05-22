@@ -43,7 +43,7 @@ end
 
 function Person:setLevel(lvl)
 	self.level = lvl
-	self.max_health = (1.5^math.floor(self.level+1))*4
+	self.max_health = (1.5^math.floor(self.level))*8
 	self.radius = 8
 	self.Entity.radius = self.radius
 	self.color = color.level(self.level)
