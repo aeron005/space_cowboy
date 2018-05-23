@@ -20,7 +20,7 @@ function GameState:init()
 	}
 
 	self.menu = self:create("Menu")
-	self.player = self:create("Player", {x=main.display.width/2, y=self.bounds.y+self.bounds.h/2, level=0})
+	self.player = self:create("Player", {x=main.display.width/2, y=self.bounds.y+self.bounds.h/2, level=1})
 	self:wave(true)
 	Sound.vox("welcome")
 end
@@ -50,18 +50,23 @@ function GameState:wave(guaranteed)
 			end
 		end
 		Sound.vox({"rare1","rare2","rare3","rare4","rare5"},2)
+	elseif math.random() < 0.125 then
+		lvl = math.max(0,baselevel+1+(math.random()^2)*2.5)
+		x,y = self:randomPosition(32)
+		self:create("Enemy", {x=x,y=y,level=lvl,badass=true})
+		Sound.vox({"threat1","threat2","threat3","threat4","threat5"},3)
 	else
 		for i=0,9 do
 			if math.random() < 0.125 or (i<2 and guaranteed) then
-				lvl = baselevel+math.random()-(baselevel/2)*math.random()
-				x,y = self:randomPosition(16+lvl/4)
+				lvl = math.max(0,baselevel+math.random()-(4)*(math.random()^(3)))
+				x,y = self:randomPosition(16)
 				self:create("Enemy", {x=x,y=y,level=lvl})
 			end
 		end
 	end
 	
 	if math.random() < 0.25 then
-		lvl = baselevel+math.random()*2
+		lvl = baselevel+(math.random()^2)*2
 		x,y = self:randomPosition(32)
 		local p = self:create("Pickup", {x=x, y=y}).Pickup
 		p.weapon = Weapon:new(Weapon.random(), lvl)
@@ -111,10 +116,12 @@ function GameState:update(dt)
 		end
 	end
 	self.entities_removed = {}
-	if math.random() < dt/8 
-	or (self.enemies < 2 and math.random() < dt/8)
+
+	if (self.enemies < 4 and math.random() < dt/8)
 	or (self.enemies < 1 and math.random() < dt*2)
 	then
+		self:wave(true)
+	elseif math.random() < dt/16  then
 		self:wave()
 	end
 

@@ -17,6 +17,7 @@ function Person:init(is_player)
 end
 
 function Person.on:spawn(e)
+	self.badass  = e.badass
 	if e.level then
 		self:setLevel(e.level)
 	else
@@ -24,14 +25,14 @@ function Person.on:spawn(e)
 	end
 
 	if self.is_player then
-		self:pickupWeapon(Weapon:new("pistol",self.level+1))
+		self:pickupWeapon(Weapon:new("pistol",self.level))
 	else
-		if math.random() < 0.25 then
+		if math.random() < 0.25 or self.badass then
 			self:pickupWeapon(Weapon:new(Weapon.random("common"),self.level))
 		else
 			self:pickupWeapon(Weapon:new("pistol",self.level))
 		end
-		if self.level > 1 then
+		if self.level > 1 or self.badass then
 			self:pickupWeapon(Weapon:new(Weapon.random(),self.level))
 		end
 		self.target = e.game:randomEntity("Person")
@@ -42,20 +43,24 @@ function Person.on:spawn(e)
 end
 
 function Person:setLevel(lvl)
+	local health_factor = self.badass and 12 or 8
+	local base_radius = self.badass and 10 or 6
 	self.level = lvl
-	self.max_health = (1.5^math.floor(self.level))*8
-	self.radius = 8
+	self.max_health = (1.5^math.floor(self.level))*health_factor
+	self.radius = base_radius
 	self.Entity.radius = self.radius
 	self.color = color.level(self.level)
 	if self.is_player then
 		self.class = "L"..(math.floor(self.level*10)/10).." "..color.name(self.level).." "..color.class(self.level)
 		if self.prev_level then
 			if math.floor(self.level) > self.prev_level then
+				self.Entity.game:wave(true)
 				Sound.vox("levelup")
 			end
 		end
 		self.prev_level = math.floor(self.level)
 	end
+	self.level_text = "L"..math.floor(self.level)
 end
 
 function Person:addLevel(lvl)
@@ -200,7 +205,7 @@ function Person:ai(e, dt)
 	if math.random() < dt*2 then
 		if math.random() < 0.25 then
 			self.target = e.game:randomEntity("Person")
-		elseif math.random() < 0.25 then
+		elseif math.random() < 0.25 and not self.badass then
 			self.target = e.game:randomEntity("Pickup")
 		end
 		if math.random() < 0.25 then
@@ -267,7 +272,7 @@ function Person.on:destroy(e)
 	end
 	Sound.play("die",e.x,e.y)
 
-	if math.random() < 0.2 then
+	if math.random() < 0.2 or self.badass then
 		local rd, ri = math.random()*math.pi*2, math.random()*160+160
 		local dx, dy = ri*math.cos(rd), ri*math.sin(rd)
 		local p = e.game:create("Pickup", {x=e.x, y=e.y, dx=dx, dy=dy}).Pickup
@@ -380,6 +385,8 @@ function Person.on:draw(e)
 		love.graphics.setColor(255,255,255)
 	else
 		love.graphics.setColor(self.color)
+		love.graphics.setFont(main.font.game)
+		love.graphics.printf(self.level_text,e.x-128,e.y+self.radius+8,256,"center")
 	end
 	love.graphics.circle("line", e.x, e.y, self.radius, 32)
 	love.graphics.setColor(self.weapon.color)
