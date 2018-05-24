@@ -160,7 +160,7 @@ function Weapon:init(name, level)
 	self.level = math.floor(level)
 	self.color = color.level(self.level)
 	self.ammo = self.mag
-	self.fullname = "L"..math.floor(self.level).." "..(color.name(self.level)).." "..self.display
+	self.fullname = string.format("L%d %s %s",math.floor(self.level),(color.name(self.level)),self.display)
 end
 
 function Weapon.random(class)

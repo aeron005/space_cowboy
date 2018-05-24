@@ -18,7 +18,7 @@ function Sound.update()
 end
 
 function Sound.play(sfx,x,y)
-	local source = love.audio.newSource("data/sfx/"..sfx..".wav", "static")
+	local source = love.audio.newSource(string.format("data/sfx/%s.wav",sfx), "static")
 	if x and y then
 		source:setPosition(x,y,0)
 		--source:setAttenuationDistances(32,128)
@@ -37,7 +37,7 @@ function Sound.vox(phrase,pow)
 		local p = phrase[math.floor(1+n*(math.random()^pow))]
 		phrase = p
 	end
-	local source = love.audio.newSource("data/vox/"..phrase..".wav", "static")
+	local source = love.audio.newSource(string.format("data/vox/%s.wav",phrase), "static")
 	source:setRelative(true)
 	if Sound.current_vox then
 		Sound.current_vox:stop()

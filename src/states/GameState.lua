@@ -5,6 +5,7 @@ local new = require('entity').create
 local Weapon = require('classes.Weapon')
 local Sound = require('classes.Sound')
 local color = require('util.color')
+local random = require('util.random')
 
 function GameState:init()
 	GameState.super.init(self)
@@ -29,20 +30,22 @@ function GameState:wave(guaranteed)
 	Sound.play("round")
 	local baselevel = self.player.Person.level or self.player.level
 	local lvl,x,y
-	if math.random() < 0.0015 then
+
+	if random.chance(1/666) then
 		for i=1,10 do
 			lvl = baselevel+math.random()
-			self:create("Enemy", {x=128+i*64, y=128, level=lvl})
+			self:create("Enemy", {x=128+i*64, y=128, level=lvl, mod="midget"})
 		end
 		for i=1,10 do
 			lvl = baselevel+math.random()
-			self:create("Enemy", {x=128+i*64, y=320, level=lvl})
+			self:create("Enemy", {x=128+i*64, y=320, level=lvl, mod="midget"})
 		end
 		Sound.vox({"rare1","rare2","rare3","rare4","rare5"},2)
-	elseif math.random() < 0.0025 then
+
+	elseif random.chance(1/400) then
 		local cx, cy, cr = main.display.width/2, main.display.height/2, main.display.height*3/8
 		for i=0,9 do
-			if math.random() < 0.75 then
+			if random.chance(3/4) then
 				local dir=(i/10)*math.pi*2
 				x,y = cx+cr*math.cos(dir), cy+cr*math.sin(dir)
 				lvl = baselevel+math.random()
@@ -50,22 +53,28 @@ function GameState:wave(guaranteed)
 			end
 		end
 		Sound.vox({"rare1","rare2","rare3","rare4","rare5"},2)
-	elseif math.random() < 0.125 then
-		lvl = math.max(0,baselevel+1+(math.random()^2)*2.5)
+
+	elseif random.chance(1/8) then
+		lvl = baselevel+1+(math.random()^2)*2
 		x,y = self:randomPosition(32)
-		self:create("Enemy", {x=x,y=y,level=lvl,badass=true})
-		Sound.vox({"threat1","threat2","threat3","threat4","threat5"},3)
+		self:create("Enemy", {x=x,y=y,level=lvl,mod="badass"})
+		Sound.vox({"threat1","threat2","threat3","threat4","threat5"},4)
+
 	else
 		for i=0,9 do
-			if math.random() < 0.125 or (i<2 and guaranteed) then
-				lvl = math.max(0,baselevel+math.random()-(4)*(math.random()^(3)))
+			if random.chance(1/8) or (i<2 and guaranteed) then
+				lvl = math.max(0,baselevel+math.random()-2*(math.random()^3))
 				x,y = self:randomPosition(16)
-				self:create("Enemy", {x=x,y=y,level=lvl})
+				local proto = {x=x,y=y,level=lvl}
+				if random.chance(1/8) then
+					proto.mod = random.choice({"loot_hungry","fast","trigger_happy","midget"},2)
+				end
+				self:create("Enemy", proto)
 			end
 		end
 	end
 	
-	if math.random() < 0.25 then
+	if random.chance(1/4) then
 		lvl = baselevel+(math.random()^2)*2
 		x,y = self:randomPosition(32)
 		local p = self:create("Pickup", {x=x, y=y}).Pickup
@@ -74,7 +83,7 @@ function GameState:wave(guaranteed)
 	end
 
 	for i=1,3 do
-		if math.random() < 0.0625 then
+		if random.chance(1/16) then
 			lvl = baselevel+math.random()*2
 			x,y = self:randomPosition(32)
 			local p = self:create("Pickup", {x=x, y=y}).Pickup
@@ -117,11 +126,11 @@ function GameState:update(dt)
 	end
 	self.entities_removed = {}
 
-	if (self.enemies < 4 and math.random() < dt/8)
-	or (self.enemies < 1 and math.random() < dt*2)
+	if (self.enemies < 4 and random.chance(dt/8))
+	or (self.enemies < 1 and random.chance(dt*2))
 	then
 		self:wave(true)
-	elseif math.random() < dt/16  then
+	elseif random.chance(dt/16) then
 		self:wave()
 	end
 
@@ -204,7 +213,7 @@ function GameState:postDraw()
 	love.graphics.setColor(color.level(person.weapon.level))
 	love.graphics.printf(self.player.Person.weapon.fullname,bar_size+8,10,bar_size,"left")
 	love.graphics.setColor(color.level(person.level))
-	love.graphics.printf(self.player.Person.class,self.bounds.w-bar_size*2-8,10,bar_size,"right")
+	love.graphics.printf(self.player.Person.class_text,self.bounds.w-bar_size*2-8,10,bar_size,"right")
 	love.graphics.pop()
 end
 

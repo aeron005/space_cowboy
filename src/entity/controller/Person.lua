@@ -1,9 +1,74 @@
 local Component = require('classes.Component')
 local Person = Component:extend("Person")
 
-local color = require('util.color')
 local Weapon = require('classes.Weapon')
 local Sound = require('classes.Sound')
+local color = require('util.color')
+local random = require('util.random')
+
+local level_base = 4/3
+local mods = {
+	default={
+		health_factor=8,
+		radius=7,
+		speed=75,
+		chase_factor=3/4,
+		personal_space=64,
+		freq_move=2,
+		freq_shoot=4,
+		freq_unshoot=8,
+		freq_swap=2,
+		freq_target=2,
+		chance_shoot=1/2,
+		chance_unshoot=1/8,
+		chance_swap=1/4,
+		chance_drop=1/5,
+		chance_revenge=1/4,
+		chance_target_person=1/4,
+		chance_target_pickup=1/4,
+	},
+	badass={
+		health_factor=12,
+		radius=10,
+		speed=50,
+		personal_space=128,
+		freq_move=1,
+		chance_drop=1,
+		chance_revenge=1/2,
+		chance_target_pickup=0,
+	},
+	fast={
+		radius=6,
+		speed=85,
+		freq_move=4,
+		freq_shoot=8,
+		freq_unshoot=16,
+		freq_target=8,
+	},
+	midget={
+		health_factor=5,
+		radius=4,
+		speed=85,
+		personal_space=16,
+	},
+	trigger_happy={
+		freq_shoot=8,
+		freq_unshoot=1,
+		chance_shoot=7/8,
+		chance_unshoot=1/2,
+	},
+	loot_hungry={
+		speed=80,
+		chase_factor=5/6,
+		freq_move=4,
+		freq_target=4,
+		freq_swap=6,
+		chance_drop=7/8,
+		chance_revenge=1/8,
+		chance_target_person=1/6,
+		chance_target_pickup=3/2,
+	},
+}
 
 function Person:init(is_player)
 	self.is_player = is_player
@@ -14,10 +79,23 @@ function Person:init(is_player)
 	for _,k in pairs({"reloading"}) do
 		self[k] = false
 	end
+	for k,v in pairs(mods.default) do
+		self[k] = v
+	end
 end
 
 function Person.on:spawn(e)
-	self.badass  = e.badass
+	if e.mod and mods[e.mod] then
+		self[e.mod] = true
+		if type(mods[e.mod]) == 'table' then
+			for k,v in pairs(mods[e.mod]) do
+				self[k] = v
+			end
+		end
+	end
+
+	e.radius = self.radius
+
 	if e.level then
 		self:setLevel(e.level)
 	else
@@ -27,7 +105,7 @@ function Person.on:spawn(e)
 	if self.is_player then
 		self:pickupWeapon(Weapon:new("pistol",self.level))
 	else
-		if math.random() < 0.25 or self.badass then
+		if random.chance(1/4) or self.badass then
 			self:pickupWeapon(Weapon:new(Weapon.random("common"),self.level))
 		else
 			self:pickupWeapon(Weapon:new("pistol",self.level))
@@ -43,15 +121,11 @@ function Person.on:spawn(e)
 end
 
 function Person:setLevel(lvl)
-	local health_factor = self.badass and 12 or 8
-	local base_radius = self.badass and 10 or 6
 	self.level = lvl
-	self.max_health = (1.5^math.floor(self.level))*health_factor
-	self.radius = base_radius
-	self.Entity.radius = self.radius
+	self.max_health = (level_base^math.floor(self.level))*self.health_factor
 	self.color = color.level(self.level)
 	if self.is_player then
-		self.class = "L"..(math.floor(self.level*10)/10).." "..color.name(self.level).." "..color.class(self.level)
+		self.class_text = string.format("L%.1f %s %s", (math.floor(self.level*10)/10), color.name(self.level), color.class(self.level))
 		if self.prev_level then
 			if math.floor(self.level) > self.prev_level then
 				self.Entity.game:wave(true)
@@ -60,7 +134,7 @@ function Person:setLevel(lvl)
 		end
 		self.prev_level = math.floor(self.level)
 	end
-	self.level_text = "L"..math.floor(self.level)
+	self.level_text = string.format("L%d",math.floor(self.level))
 end
 
 function Person:addLevel(lvl)
@@ -78,7 +152,6 @@ end
 function Person.on:update(e, dt)
 	local i = e.input
 	local left, right, up, down = i.left, i.right, i.up, i.down
-	local speed = 75
 	e.dx, e.dy = 0, 0
 
 	-- Aiming and AI
@@ -91,16 +164,16 @@ function Person.on:update(e, dt)
 
 	-- Movement
 	if left then
-		e.dx = e.dx-speed
+		e.dx = e.dx-self.speed
 	end
 	if right then
-		e.dx = e.dx+speed
+		e.dx = e.dx+self.speed
 	end
 	if up then
-		e.dy = e.dy-speed
+		e.dy = e.dy-self.speed
 	end
 	if down then
-		e.dy = e.dy+speed
+		e.dy = e.dy+self.speed
 	end
 	
 	-- Shooting
@@ -177,41 +250,48 @@ end
 
 function Person:ai(e, dt)
 	local i = e.input
+	local chasing_pickup = (self.target and self.target.active and self.target.Pickup)
 	-- Movement
-	if math.random() < dt*2 then
+	if random.chance(dt*self.freq_move) then
 		if type(self.target) == 'table'
 		and self.target ~= e
 		and self.target.active then
 			local t = self.target
-			i.left = math.random() < (t.x<e.x and 0.7 or 0.3)
-			i.right = math.random() < (t.x>e.x and 0.7 or 0.3)
-			i.down = math.random() < (t.y>e.y and 0.7 or 0.3)
-			i.up = math.random() < (t.y<e.y and 0.7 or 0.3)
+			local d = math.sqrt((e.x-t.x)^2 + (e.y+t.y)^2)
+			local factor = (d > self.personal_space or chasing_pickup) and self.chase_factor or 1-self.chase_factor
+			i.left = random.chance(t.x<e.x and factor or 1-factor)
+			i.right = random.chance(t.x>e.x and factor or 1-factor)
+			i.down = random.chance(t.y>e.y and factor or 1-factor)
+			i.up = random.chance(t.y<e.y and factor or 1-factor)
 		else
-			i.left = math.random() < 0.5
-			i.right = math.random() < 0.5
-			i.down = math.random() < 0.5
-			i.up = math.random() < 0.5
+			i.left = random.chance(1/2)
+			i.right = random.chance(1/2)
+			i.down = random.chance(1/2)
+			i.up = random.chance(1/2)
 		end
-		self.ddir = (math.random() - 0.5) * 4
+		self.ddir = random.range(-2,2)
 	end
 	-- Actions
-	if i.shoot and math.random() < dt*8 then
-		i.shoot = math.random() < 0.125
+	if i.shoot and random.chance(dt*self.freq_unshoot) then
+		i.shoot = random.chance(self.chance_unshoot)
 	end
-	if math.random() < dt*4 then
-		i.shoot = math.random() < 0.5
+	if random.chance(dt*self.freq_shoot) then
+		i.shoot = random.chance(self.chance_shoot)
 	end
-	if math.random() < dt*2 then
-		if math.random() < 0.25 then
+	if random.chance(dt*self.freq_target)
+	and not chasing_pickup
+	then
+		if random.chance(self.chance_target_person) then
 			self.target = e.game:randomEntity("Person")
-		elseif math.random() < 0.25 and not self.badass then
+		elseif random.chance(self.chance_target_pickup) then
 			self.target = e.game:randomEntity("Pickup")
 		end
-		if math.random() < 0.25 then
+	end
+	if random.chance(dt*self.freq_swap) then
+		if random.chance(self.chance_swap) then
 			e:broadcast("action", "inv_prev")
 		end
-		if math.random() < 0.25 then
+		if random.chance(self.chance_swap) then
 			e:broadcast("action", "inv_next")
 		end
 	end
@@ -259,8 +339,8 @@ function Person.on:destroy(e)
 		expl.max_time = 3
 		expl:setColor({255,255,255}, self.color)
 
-		if (math.random() < 0.0125 and self.level < 3)
-		or (math.random() < 0.125 and self.level < 1)
+		if (random.chance(1/100) and self.level < 3)
+		or (random.chance(1/8) and self.level < 2)
 		then
 			Sound.vox({"insult1","insult2","insult3","insult4","insult5"},2)
 		else
@@ -272,7 +352,7 @@ function Person.on:destroy(e)
 	end
 	Sound.play("die",e.x,e.y)
 
-	if math.random() < 0.2 or self.badass then
+	if random.chance(self.chance_drop) then
 		local rd, ri = math.random()*math.pi*2, math.random()*160+160
 		local dx, dy = ri*math.cos(rd), ri*math.sin(rd)
 		local p = e.game:create("Pickup", {x=e.x, y=e.y, dx=dx, dy=dy}).Pickup
@@ -286,17 +366,17 @@ function Person.on:collide(e,oe)
 		local b = oe.Bullet
 		if b.owner ~= e then
 			b.owner.Person:addLevel(0.0025)
-			self.health = self.health - (1.5^b.level)*b.bonus
+			self.health = self.health - (level_base^b.level)*b.bonus
 			if self.health < 0 then
-				b.owner.Person:addLevel(0.025)
+				b.owner.Person:addLevel(0.05)
 				e:destroy()
-				if math.random() < 0.125
+				if random.chance(1/8)
 				and b.owner.Person.is_player then
 					Sound.vox({"compliment1","compliment2","compliment3","compliment4","compliment5"},4)
 				end
 			else
 				if not self.is_player
-				and math.random() < 0.25 then
+				and random.chance(self.chance_revenge) then
 					self.target = b.owner
 				end
 			end
@@ -308,11 +388,11 @@ function Person.on:collide(e,oe)
 	end
 
 	if oe.Pickup then
-		self:addLevel(0.0025)
+		self:addLevel(0.005)
 		if oe.Pickup.weapon then
 			self:pickupWeapon(oe.Pickup.weapon)
 		else
-			self.health = self.health + (1.5^oe.Pickup.level)*3
+			self.health = self.health + (level_base^oe.Pickup.level)*3
 			if self.health > self.max_health then
 				self.health = self.max_health
 			end
@@ -387,6 +467,9 @@ function Person.on:draw(e)
 		love.graphics.setColor(self.color)
 		love.graphics.setFont(main.font.game)
 		love.graphics.printf(self.level_text,e.x-128,e.y+self.radius+8,256,"center")
+		--if e.mod then
+		--	love.graphics.printf(e.mod,e.x-128,e.y-self.radius-20,256,"center")
+		--end
 	end
 	love.graphics.circle("line", e.x, e.y, self.radius, 32)
 	love.graphics.setColor(self.weapon.color)
