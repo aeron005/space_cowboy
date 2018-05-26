@@ -250,6 +250,18 @@ function GameState:create(obj,properties)
 	return e
 end
 
+function GameState:bestEntity(score_func)
+	local best, best_score = nil, -math.huge
+	for e,_ in pairs(self.entities) do
+		local test = score_func(e)
+		if not test == false and test > best_score then
+			best_score = test
+			best = e
+		end
+	end
+	return best
+end
+
 function GameState:randomPosition(r)
 	r = r or 32
 	return self.bounds.x+r+math.random()*(self.bounds.w-r*2), self.bounds.y+r+math.random()*(self.bounds.h-r*2)

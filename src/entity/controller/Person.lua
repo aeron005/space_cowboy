@@ -12,7 +12,7 @@ local mods = {
 		health_factor=8,
 		radius=7,
 		speed=75,
-		chase_factor=3/4,
+		chase_factor=9/10,
 		personal_space=64,
 		freq_move=2,
 		freq_shoot=4,
@@ -73,7 +73,7 @@ local mods = {
 function Person:init(is_player)
 	self.is_player = is_player
 	self.weapons = {}
-	for _,k in pairs({"dir","ddir","ammo","recoil","stabil","bt","rt"}) do
+	for _,k in pairs({"dir","ddir","ammo","recoil","stabil","bt","rt","mx","my"}) do
 		self[k] = 0
 	end
 	for _,k in pairs({"reloading"}) do
@@ -95,6 +95,7 @@ function Person.on:spawn(e)
 	end
 
 	e.radius = self.radius
+	self.personal_space = self.personal_space^2
 
 	if e.level then
 		self:setLevel(e.level)
@@ -149,6 +150,12 @@ function Person:equip(wi)
 	end
 end
 
+local function closestPerson(x,y,player)
+	return function(e)
+		return e.Person and e ~= player and -((e.x-x)^2+(e.y-y)^2) or false
+	end
+end
+
 function Person.on:update(e, dt)
 	local i = e.input
 	local left, right, up, down = i.left, i.right, i.up, i.down
@@ -157,7 +164,15 @@ function Person.on:update(e, dt)
 	-- Aiming and AI
 	if self.is_player then
 		local mx, my = main:mouseX(), main:mouseY()
-		self.dir = math.atan2(my-e.y,mx-e.x)
+		if e.input.aim then
+			if self.target and self.target.active then
+				mx, my = self.target.x, self.target.y
+			else
+				self.target = e.game:bestEntity(closestPerson(self.mx,self.my,e))
+			end
+		end
+		self.mx, self.my = self.mx + (mx-self.mx)*dt*30, self.my + (my-self.my)*dt*30
+		self.dir = math.atan2(self.my-e.y,self.mx-e.x)
 	else
 		self:ai(e,dt)
 	end
@@ -257,7 +272,7 @@ function Person:ai(e, dt)
 		and self.target ~= e
 		and self.target.active then
 			local t = self.target
-			local d = math.sqrt((e.x-t.x)^2 + (e.y+t.y)^2)
+			local d = (e.x-t.x)^2 + (e.y+t.y)^2
 			local factor = (d > self.personal_space or chasing_pickup) and self.chase_factor or 1-self.chase_factor
 			i.left = random.chance(t.x<e.x and factor or 1-factor)
 			i.right = random.chance(t.x>e.x and factor or 1-factor)
@@ -282,7 +297,11 @@ function Person:ai(e, dt)
 	and not chasing_pickup
 	then
 		if random.chance(self.chance_target_person) then
-			self.target = e.game:randomEntity("Person")
+			if random.chance(1/2) then
+				self.target = e.game:bestEntity(closestPerson(e.x,e.y,e))
+			else
+				self.target = e.game:randomEntity("Person")
+			end
 		elseif random.chance(self.chance_target_pickup) then
 			self.target = e.game:randomEntity("Pickup")
 		end
@@ -304,6 +323,7 @@ function Person:ai(e, dt)
 		self.dir = self.dir + self.ddir*dt 
 	end
 end
+
 
 function Person.on:action(e, action)
 	if not self.reloading then
@@ -328,6 +348,9 @@ function Person.on:action(e, action)
 			if self.weapon.ammo ~= self.weapon.mag then
 				self:reload()
 			end
+		end
+		if action == "aim" then
+			self.target = nil
 		end
 	end
 end
@@ -477,7 +500,7 @@ function Person.on:draw(e)
 end
 
 function Person.on:drawCursor(e)
-	local mx, my = main:mouseX(), main:mouseY()
+	local mx, my = self.mx, self.my
 	local rr = math.max(math.sqrt((e.x-mx)*(e.x-mx) + (e.y-my)*(e.y-my)) * math.tan(self.weapon.spread + self.stabil),8)
 	local r = math.max( 128*math.tan(self.stabil),8)/2
 	local c = {unpack(self.weapon.color)}

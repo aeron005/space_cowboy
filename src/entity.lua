@@ -3,10 +3,10 @@ local classes = {
 		Physical={{bounded=true}},
 		Person={true},
 		Keyboard={
-			{w="up",s="down",a="left",d="right",space="shoot",r="reload",q="inv_prev",e="inv_next"}
+			{w="up",s="down",a="left",d="right",space="shoot",r="reload",q="inv_prev",e="inv_next",lshift="aim"}
 		},
 		Mouse={
-			{l="shoot", wu="inv_prev", wd="inv_next"}
+			{l="shoot", r="aim", wu="inv_prev", wd="inv_next"}
 		}
 	},
 
