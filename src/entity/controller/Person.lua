@@ -9,7 +9,7 @@ local random = require('util.random')
 local level_base = 4/3
 local mods = {
 	default={
-		health_factor=8,
+		health_factor=10,
 		radius=7,
 		speed=75,
 		chase_factor=9/10,
@@ -28,7 +28,7 @@ local mods = {
 		chance_target_pickup=1/4,
 	},
 	badass={
-		health_factor=12,
+		health_factor=14,
 		radius=10,
 		speed=50,
 		personal_space=128,
@@ -46,7 +46,7 @@ local mods = {
 		freq_target=8,
 	},
 	midget={
-		health_factor=5,
+		health_factor=7,
 		radius=4,
 		speed=85,
 		personal_space=16,
@@ -153,6 +153,12 @@ end
 local function closestPerson(x,y,player)
 	return function(e)
 		return e.Person and e ~= player and -((e.x-x)^2+(e.y-y)^2) or false
+	end
+end
+
+local function toughestPerson(player)
+	return function(e)
+		return e.Person and e ~= player and (e.Person.level - player.Person.level) or false
 	end
 end
 
@@ -297,8 +303,10 @@ function Person:ai(e, dt)
 	and not chasing_pickup
 	then
 		if random.chance(self.chance_target_person) then
-			if random.chance(1/2) then
+			if random.chance(1/3) then
 				self.target = e.game:bestEntity(closestPerson(e.x,e.y,e))
+			elseif random.chance(2/3) then
+				self.target = e.game:bestEntity(toughestPerson(e))
 			else
 				self.target = e.game:randomEntity("Person")
 			end
@@ -391,7 +399,8 @@ function Person.on:collide(e,oe)
 			b.owner.Person:addLevel(0.0025)
 			self.health = self.health - (level_base^b.level)*b.bonus
 			if self.health < 0 then
-				b.owner.Person:addLevel(0.05)
+				local bonus = math.max(0,(self.level + 1 - b.owner.Person.level)*0.1)
+				b.owner.Person:addLevel(0.05+bonus)
 				e:destroy()
 				if random.chance(1/8)
 				and b.owner.Person.is_player then
