@@ -217,24 +217,6 @@ function GameState:postDraw()
 	love.graphics.pop()
 end
 
-function GameState:keypressed(...)
-	self.player:broadcast("keypressed",...)
-	self.menu:broadcast("keypressed",...)
-end
-
-function GameState:keyreleased(...)
-	self.player:broadcast("keyreleased",...)
-	self.menu:broadcast("keyreleased",...)
-end
-
-function GameState:mousepressed(x,y,button)
-	self.player:broadcast("mousepressed",button)
-end
-
-function GameState:mousereleased(x,y,button)
-	self.player:broadcast("mousereleased",button)
-end
-
 function GameState:spawn(e)
 	self.entities_added[e] = true
 end
@@ -280,6 +262,35 @@ function GameState:randomEntity(class)
 		end
 	end
 	return t[math.random(#t)]
+end
+
+local function handleEvent(name)
+	GameState[name] = function(self,...)
+		if self.player and self.player.active then
+			self.player:broadcast(name,...)
+		end
+		if self.menu then
+			self.menu:broadcast(name,...)
+		end
+	end
+end
+
+local events = {
+	"keypressed",
+	"keyreleased",
+	"mousepressed",
+	"mousereleased",
+	"mousemoved",
+	"gamepadpressed",
+	"gamepadreleased",
+	"gamepadaxis",
+	"joystickpressed",
+	"joystickreleased",
+	"joystickaxis",
+	"joystickhat"
+}
+for _,event in ipairs(events) do
+	handleEvent(event)
 end
 
 return GameState

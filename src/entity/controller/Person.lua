@@ -72,6 +72,7 @@ local mods = {
 
 function Person:init(is_player)
 	self.is_player = is_player
+	self.gamepad_dir = 0
 	self.weapons = {}
 	for _,k in pairs({"dir","ddir","ammo","recoil","stabil","bt","rt","mx","my"}) do
 		self[k] = 0
@@ -170,6 +171,26 @@ function Person.on:update(e, dt)
 	-- Aiming and AI
 	if self.is_player then
 		local mx, my = main:mouseX(), main:mouseY()
+		if mx ~= self.prev_mx
+		or my ~= self.prev_my
+		then
+			self.use_gamepad = false
+			self.prev_mx, self.prev_my = mx, my
+		end
+		
+		if self.use_gamepad then
+			local rmx = self.joystick:getGamepadAxis("rightx")
+			local rmy = self.joystick:getGamepadAxis("righty")
+			local mag = math.sqrt(rmx^2 + rmy^2)
+			
+			if mag > 0.5 then
+				self.gamepad_dir = math.atan2(rmy, rmx)
+			end
+			
+			mx = e.x + math.cos(self.gamepad_dir)*100
+			my = e.y + math.sin(self.gamepad_dir)*100
+		end
+
 		if e.input.aim then
 			if self.target and self.target.active then
 				mx, my = self.target.x, self.target.y
@@ -359,6 +380,23 @@ function Person.on:action(e, action)
 		end
 		if action == "aim" then
 			self.target = nil
+		end
+	end
+end
+
+function Person.on:mousemoved(e)
+	if self.is_player then
+		self.use_gamepad = false
+	end
+end
+
+function Person.on:gamepadaxis(e,joystick,axis,value)
+	if self.is_player then
+		if axis == "rightx"
+		or axis == "righty" 
+		then
+			self.use_gamepad = true
+			self.joystick = joystick
 		end
 	end
 end

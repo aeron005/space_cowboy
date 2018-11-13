@@ -7,6 +7,15 @@ local classes = {
 		},
 		Mouse={
 			{l="shoot", r="aim", wu="inv_prev", wd="inv_next"}
+		},
+		Gamepad={
+			{
+				lefty_neg="up",lefty_pos="down",leftx_neg="left",leftx_pos="right",
+				triggerright_pos="shoot", triggerleft_pos="aim",
+				dpleft="inv_prev",dpright="inv_next", 
+				leftshoulder="inv_prev",rightshoulder="inv_next", 
+				a="shoot",x="reload"
+			}
 		}
 	},
 
@@ -33,6 +42,9 @@ local classes = {
 		Menu=true,
 		Keyboard={
 			{n="new_game",f9="screenshot"}
+		},
+		Gamepad={
+			{start="new_game",back="new_game"}
 		}
 	}
 }

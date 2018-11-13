@@ -83,16 +83,13 @@ function main:keypressed(key)
 end
 
 --- Bind main methods for Love to use directly as callbacks
-local function wrap(name)
-	return function (...) main[name](main,...) end
+local function buildEvent(name)
+	local capname = name:sub(1,1):upper() .. name:sub(2) 
+	local handler = "on"..capname
+	love[name] = function (...) main[handler](main,...) end
 end
 
 -- It's like magic!
-love.update = wrap("onUpdate")
-love.draw = wrap("onDraw")
-love.keypressed = wrap("onKeypressed")
-love.keyreleased = wrap("onKeyreleased")
-love.mousepressed = wrap("onMousepressed")
-love.mousereleased = wrap("onMousereleased")
-love.focus = wrap("onFocus")
-
+for _,event in ipairs(require('events')) do
+	buildEvent(event)
+end

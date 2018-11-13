@@ -12,7 +12,7 @@ function Mouse.on:create(e)
 	end
 end
 
-function Mouse.on:mousepressed(e,button)
+function Mouse.on:mousepressed(e,x,y,button)
 	for control,name in pairs(self.bindings) do
 		if button == control then
 			e.input[name] = true
@@ -21,7 +21,7 @@ function Mouse.on:mousepressed(e,button)
 	end
 end
 
-function Mouse.on:mousereleased(e,button)
+function Mouse.on:mousereleased(e,x,y,button)
 	for control,name in pairs(self.bindings) do
 		if button == control then
 			e.input[name] = false

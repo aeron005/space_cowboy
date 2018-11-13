@@ -17,12 +17,8 @@ local function buildEvent(name)
 	end
 end
 
-buildEvent("update")
-buildEvent("draw")
-buildEvent("mousepressed")
-buildEvent("mousereleased")
-buildEvent("keypressed")
-buildEvent("keyreleased")
-buildEvent("focus")
+for _,event in ipairs(require('events')) do
+	buildEvent(event)
+end
 
 return State
